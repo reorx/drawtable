@@ -26,7 +26,7 @@
 """
 
 
-class BoxDrawer(object):
+class Box(object):
     align_marks = {
         'left': '<',
         'right': '>',
@@ -185,13 +185,13 @@ if __name__ == '__main__':
         return d
 
     # one cell box
-    BoxDrawer(margin_x=1, margin_y=0, col_max_width=40).draw([[
+    Box(margin_x=1, margin_y=0, col_max_width=40).draw([[
         ('Lorem ipsum dolor sit amet, consectetur adipiscing elit, '
          'Ut enim ad minim veniam, quis nostrud exercitation.')
     ]])
 
     # complex box
-    box = BoxDrawer(margin_x=2, margin_y=0, col_max_width=15, align='right')
+    box = Box(margin_x=2, margin_y=0, col_max_width=15, align='right')
     box.draw(random_data())
     box.draw([
         ['', ''],
