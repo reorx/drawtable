@@ -1,29 +1,12 @@
 # coding: utf-8
 
-"""
-┌─────┬─────┬─────┐
-│ abc │ def │ ghi │
-├─────┼─────┼─────┤
-│  12 │   0 │ 1   │
-├─────┼─────┼─────┤
-│   4 │  72 │ 2   │
-└─────┴─────┴─────┘
+import sys
 
 
-┌─────┬─────┬─────┐
+PY3 = sys.version_info >= (3,)
 
-│ abc │ def │ ghi │
-
-├─────┼─────┼─────┤
-
-│  12 │   0 │ 1   │
-
-├─────┼─────┼─────┤
-
-│   4 │  72 │ 2   │
-
-└─────┴─────┴─────┘
-"""
+if PY3:
+    xrange = range
 
 
 class Box(object):
@@ -56,7 +39,7 @@ class Box(object):
                     raise TypeError('item in row must be str, get: {:r}'.format(i))
                 col = cols.setdefault(index, [])
                 col.append(i)
-        cols_width = {k: min([max(map(len, v)), self.col_max_width]) for k, v in cols.iteritems()}
+        cols_width = {k: min([max(map(len, v)), self.col_max_width]) for k, v in cols.items()}
         return cols, cols_width
 
     def _draw_line(self, row, cols_num, cols_width):
@@ -111,7 +94,7 @@ class Box(object):
                     sub_row.append('')
             sub_rows.append(sub_row)
         sub_lines = [self._draw_line(r, cols_num, cols_width) for r in sub_rows]
-        #print sub_rows, sub_lines, row
+        #print(sub_rows, sub_lines, row)
         return '\n'.join(sub_lines)
 
     def _cell_width(self, col_width):
@@ -172,7 +155,7 @@ class Box(object):
         lines.append(self.draw_bottom(cols_num, cols_width))
 
         for i in lines:
-            print i
+            print(i)
 
 
 if __name__ == '__main__':
