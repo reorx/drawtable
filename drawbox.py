@@ -81,6 +81,12 @@ class Box(object):
             return ['']
         return [text[i:i + n] for i in range(0, len(text), n)]
 
+    def _split_text(self, text):
+        sp = []
+        for i in text.split('\n'):
+            sp += self._split_by_max_width(i)
+        return sp
+
     def draw_line(self, row, cols_num, cols_width):
         cols_split = {}
         max_items = 0
@@ -89,7 +95,7 @@ class Box(object):
                 i = row[index]
             except IndexError:
                 i = ''
-            sp = self._split_by_max_width(i)
+            sp = self._split_text(i)
             if len(sp) > max_items:
                 max_items = len(sp)
             cols_split[index] = sp
@@ -184,12 +190,6 @@ if __name__ == '__main__':
             )
         return d
 
-    # one cell box
-    Box(margin_x=1, margin_y=0, col_max_width=40).draw([[
-        ('Lorem ipsum dolor sit amet, consectetur adipiscing elit, '
-         'Ut enim ad minim veniam, quis nostrud exercitation.')
-    ]])
-
     # complex box
     box = Box(margin_x=2, margin_y=0, col_max_width=15, align='right')
     box.draw(random_data())
@@ -197,3 +197,15 @@ if __name__ == '__main__':
         ['', ''],
         [''],
     ])
+
+    # one cell box
+    lorem = """Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+Sed ut perspiciatis,
+unde omnis iste natus error
+sit voluptatem accusantium doloremque laudantium,
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."""
+    Box(margin_x=1, margin_y=0, col_max_width=40).draw([[lorem]])
