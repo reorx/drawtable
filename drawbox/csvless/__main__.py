@@ -10,7 +10,7 @@ from drawbox.csvless.getenv import Env
 
 def main():
     """
-    Render a CSV file in the console as a Markdown-compatible, fixed-width table.
+    Render a CSV file in the console as a human readable table
     """
     parser = init_parser()
 
