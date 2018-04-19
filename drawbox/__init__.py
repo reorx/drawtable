@@ -1,12 +1,13 @@
 # coding: utf-8
 
+from __future__ import print_function
 import sys
 
 
-PY3 = sys.version_info >= (3,)
+PY2 = sys.version_info.major == 2
 
-if PY3:
-    xrange = range
+if PY2:
+    range = xrange  # NOQA
 
 
 class Box(object):
@@ -16,7 +17,7 @@ class Box(object):
         'center': '^',
     }
 
-    def __init__(self, margin_x=1, margin_y=0, align='left', col_max_width=16):
+    def __init__(self, margin_x=1, margin_y=0, align='left', max_col_width=16):
         self.margin_x = margin_x
         self.margin_x_str = ' ' * margin_x
         self.margin_y = margin_y
@@ -25,13 +26,17 @@ class Box(object):
             self.align_mark = self.align_marks[align]
         except KeyError:
             raise ValueError('align must be one of {}'.format(self.align_marks.keys()))
-        self.col_max_width = col_max_width
+        self.max_col_width = max_col_width
 
     def preprocess_data(self, data):
-        if not isinstance(data, list):
-            raise TypeError('data must be list, get: {:r}'.format(data))
+        #if not isinstance(data, list):
+        #    raise TypeError('data must be list, get: {:r}'.format(data))
         cols = {}
+        rows = []
+        datalen = 0
         for row in data:
+            datalen += 1
+            rows.append(row)
             if not isinstance(row, list):
                 raise TypeError('row in data must be list, get: {:r}'.format(row))
             for index, i in enumerate(row):
@@ -39,12 +44,12 @@ class Box(object):
                     raise TypeError('item in row must be str, get: {:r}'.format(i))
                 col = cols.setdefault(index, [])
                 col.append(i)
-        cols_width = {k: min([max(map(len, v)), self.col_max_width]) for k, v in cols.items()}
-        return cols, cols_width
+        cols_width = {k: min([max(map(len, v)), self.max_col_width]) for k, v in cols.items()}
+        return rows, cols, cols_width, datalen
 
     def _draw_line(self, row, cols_num, cols_width):
         cells = []
-        for index in xrange(cols_num):
+        for index in range(cols_num):
             try:
                 i = row[index]
             except IndexError:
@@ -59,7 +64,7 @@ class Box(object):
         return line
 
     def _split_by_max_width(self, text):
-        n = self.col_max_width
+        n = self.max_col_width
         if not text:
             return ['']
         return [text[i:i + n] for i in range(0, len(text), n)]
@@ -73,7 +78,7 @@ class Box(object):
     def draw_line(self, row, cols_num, cols_width):
         cols_split = {}
         max_items = 0
-        for index in xrange(cols_num):
+        for index in range(cols_num):
             try:
                 i = row[index]
             except IndexError:
@@ -84,9 +89,9 @@ class Box(object):
             cols_split[index] = sp
 
         sub_rows = []
-        for row_index in xrange(max_items):
+        for row_index in range(max_items):
             sub_row = []
-            for col_index in xrange(cols_num):
+            for col_index in range(cols_num):
                 sp = cols_split[col_index]
                 try:
                     sub_row.append(sp[row_index])
@@ -105,7 +110,7 @@ class Box(object):
         ┌─────┬─────┬─────┐
         """
         cells = []
-        for index in xrange(cols_num):
+        for index in range(cols_num):
             cells.append(self._cell_width(cols_width[index]) * '─')
         return '┌' + '┬'.join(cells) + '┐'
 
@@ -114,7 +119,7 @@ class Box(object):
         ├─────┼─────┼─────┤
         """
         cells = []
-        for index in xrange(cols_num):
+        for index in range(cols_num):
             cells.append(self._cell_width(cols_width[index]) * '─')
         return '├' + '┼'.join(cells) + '┤'
 
@@ -123,11 +128,11 @@ class Box(object):
         └─────┴─────┴─────┘
         """
         cells = []
-        for index in xrange(cols_num):
+        for index in range(cols_num):
             cells.append(self._cell_width(cols_width[index]) * '─')
         return '└' + '┴'.join(cells) + '┘'
 
-    def draw(self, data):
+    def draw(self, data, writer=None):
         """
         line:
         |<cell>|<cell>|...|
@@ -135,27 +140,31 @@ class Box(object):
         cell:
         <margin-x><text><margin-x>
         """
-        cols, cols_width = self.preprocess_data(data)
+        rows, cols, cols_width, datalen = self.preprocess_data(data)
         cols_num = len(cols)
-        margin_y_line = self._draw_line(['' for i in xrange(cols_num)], cols_num, cols_width)
+        margin_y_line = self._draw_line(['' for i in range(cols_num)], cols_num, cols_width)
         sep_line = self.draw_sep(cols_num, cols_width)
 
         lines = [self.draw_top(cols_num, cols_width)]
 
-        row_last_index = len(data) - 1
-        for row_index, row in enumerate(data):
-            for _i in xrange(self.margin_y):
+        row_last_index = datalen - 1
+        for row_index, row in enumerate(rows):
+            for _i in range(self.margin_y):
                 lines.append(margin_y_line)
             lines.append(self.draw_line(row, cols_num, cols_width))
-            for _i in xrange(self.margin_y):
+            for _i in range(self.margin_y):
                 lines.append(margin_y_line)
             if row_index != row_last_index:
                 lines.append(sep_line)
 
         lines.append(self.draw_bottom(cols_num, cols_width))
 
+        if writer is None:
+            def writer(s):
+                sys.stdout.write(s)
+
         for i in lines:
-            print(i)
+            writer(i + '\n')
 
 
 if __name__ == '__main__':
@@ -163,18 +172,18 @@ if __name__ == '__main__':
     import string
 
     def random_str(length):
-        return ''.join(random.choice(string.ascii_letters) for i in xrange(length))
+        return ''.join(random.choice(string.ascii_letters) for i in range(length))
 
     def random_data():
         d = []
-        for i in xrange(random.randint(1, 5)):
+        for i in range(random.randint(1, 5)):
             d.append(
-                [random_str(random.randint(0, 20)) for j in xrange(random.randint(1, 5))]
+                [random_str(random.randint(0, 20)) for j in range(random.randint(1, 5))]
             )
         return d
 
     # complex box
-    box = Box(margin_x=2, margin_y=0, col_max_width=15, align='right')
+    box = Box(margin_x=2, margin_y=0, max_col_width=15, align='right')
     box.draw(random_data())
     box.draw([
         ['', ''],
@@ -191,4 +200,4 @@ sit voluptatem accusantium doloremque laudantium,
 
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."""
-    Box(margin_x=1, margin_y=0, col_max_width=40).draw([[lorem]])
+    Box(margin_x=1, margin_y=0, max_col_width=40).draw([[lorem]])
