@@ -7,6 +7,11 @@ import subprocess
 from drawbox import Box, PY2
 from drawbox.csvless.getenv import Env
 
+# TODO
+# - [x] auto header
+# - [ ] generated line number
+# - [ ] wrap row
+
 
 def main():
     """
@@ -22,6 +27,7 @@ def main():
     box = Box(
         max_col_width=args.max_column_width,
         table_style=args.table_style,
+        auto_header=args.auto_header,
     )
 
     if args.cat:
@@ -34,14 +40,22 @@ def main():
 
         p = subprocess.Popen(less_cmd, stdin=subprocess.PIPE)
 
+        counts = {'w': 0}
         if PY2:
             def writer(line):
                 p.stdin.write(line)
+                counts['w'] += 1
         else:
             def writer(line):
                 p.stdin.write(line.encode())
+                counts['w'] += 1
 
-        box.draw(reader, writer=writer)
+        try:
+            box.draw(reader, writer=writer)
+        except BrokenPipeError as e:
+            if counts['w'] == 0:
+                print('Zero success write before BrokenPipeError')
+                raise e
 
         f.close()
         p.communicate()
@@ -90,9 +104,9 @@ def init_parser():
         '--cat', dest='cat', action='store_true',
         help='Behave like cat, print to stdout directly')
     display_group.add_argument(
-        '-H', '--no-header-row', dest='no_header_row', action='store_true',
+        '-H', '--auto-header', dest='auto_header', action='store_true',
         help=('Specify that the input CSV file has no header row. '
-              'Will create default headers (a,b,c,...).'))
+              'Will create auto header (a,b,c,...).'))
 
     # file options
     file_group = parser.add_argument_group('File options')

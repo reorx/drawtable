@@ -3,12 +3,18 @@
 from __future__ import print_function
 import sys
 import collections
+import string
+from string import ascii_lowercase
 
 
 PY2 = sys.version_info.major == 2
 
 if PY2:
     range = xrange  # NOQA
+
+
+auto_header_letters = string.ascii_uppercase
+auto_header_letters_num = len(auto_header_letters)
 
 
 class BaseStyle(object):
@@ -129,7 +135,9 @@ class Box(object):
         'markdown': MarkdownStyle,
     }
 
-    def __init__(self, margin_x=1, margin_y=0, align='left', max_col_width=16, table_style='box'):
+    def __init__(self, margin_x=1, margin_y=0, align='left',
+                 max_col_width=16, table_style='box',
+                 auto_header=False):
         self.margin_x = margin_x
         self.margin_x_str = ' ' * margin_x
         self.margin_y = margin_y
@@ -140,6 +148,7 @@ class Box(object):
             raise ValueError('align must be one of {}'.format(self.align_marks.keys()))
         self.max_col_width = max_col_width
         self.table_style = self.table_styles[table_style]()
+        self.auto_header = auto_header
 
     def preprocess_data(self, data):
         if not isinstance(data, collections.Iterable):
@@ -226,6 +235,17 @@ class Box(object):
             sp += self._split_by_max_width(i)
         return sp
 
+    def get_auto_header_values(self, cols_num, cols_width):
+        vs = []
+        for i in range(cols_num):
+            if i < auto_header_letters_num:
+                v = auto_header_letters[i]
+            else:
+                n = i % auto_header_letters_num
+                v = auto_header_letters[n] + str(int(i / auto_header_letters_num))
+            vs.append(v)
+        return vs
+
     def draw(self, data, writer=None):
         """
         line:
@@ -252,11 +272,20 @@ class Box(object):
             row_strs.append(row_str)
             writer(row_str + '\n')
 
+        if self.auto_header:
+            append_and_write(
+                ts.draw_header(
+                    self.sub_row_cells_generator(
+                        self.get_auto_header_values(cols_num, cols_width),
+                        cols_num, cols_width),
+                    cells_width)
+            )
+
         row_last_index = rowslen - 1
         for row_index, row in enumerate(rows):
             sub_row_cells_gen = self.sub_row_cells_generator(row, cols_num, cols_width)
 
-            if row_index == 0:
+            if not self.auto_header and row_index == 0:
                 append_and_write(ts.draw_header(sub_row_cells_gen, cells_width))
                 continue
 
