@@ -5,6 +5,7 @@ import csv
 import argparse
 import subprocess
 from drawbox import Box, PY2
+from drawbox.csvless.getenv import Env
 
 
 def main():
@@ -13,10 +14,10 @@ def main():
     """
     parser = init_parser()
 
-    args = parser.parse_args()
+    args, reader_kwgs = parse_args(parser)
 
     f = open_file(args.file, encoding=args.encoding)
-    reader = csv.reader(f, **get_reader_kwargs(args))
+    reader = csv.reader(f, **reader_kwgs)
 
     box = Box(
         max_col_width=args.max_column_width,
@@ -47,10 +48,24 @@ def main():
 
 
 def init_parser():
+    # env vars
+    Env.set_prefix('CSVLESS')
+
+    ENV_MAX_COL_WIDTH = Env('{prefix}_MAX_COLUMN_WIDTH', type=int, default=32)
+    ENV_LINE_NUMBERS = Env('{prefix}_LINE_NUMBERS', type=bool, default=False)
+    ENV_TABLE_STYLE = Env('{prefix}_TABLE_STYLE', type=str, default='base')
+
+    env_help = 'Environment Variables:\n'
+    env_key_max_len = max([len(i.key) for i in Env._instances.values()])
+    env_key_tmpl = '  {:<' + str(env_key_max_len) + '}\t{}\n'
+    for i in Env._instances.values():
+        env_help += env_key_tmpl.format(i.key, 'default: {}'.format(i.default))
+    env_help = env_help[:-1]
+
     # the `formatter_class` can make description & epilog show multiline
     parser = argparse.ArgumentParser(
         description='Render a CSV file in the console as a Markdown-compatible, fixed-width table.',
-        epilog='',
+        epilog=env_help,
         usage='csvless [options] FILE',
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -60,22 +75,24 @@ def init_parser():
     # display options
     display_group = parser.add_argument_group('Display options')
     display_group.add_argument(
-        '-w', '--max-column-width', dest='max_column_width', type=int, default=32,
+        '-w', '--max-column-width', dest='max_column_width', type=int,
+        default=ENV_MAX_COL_WIDTH.get(),
         help='Truncate all columns to at most this width. The remainder will be replaced with ellipsis.')
     display_group.add_argument(
-        '-H', '--no-header-row', dest='no_header_row', action='store_true',
-        required=False,
-        help=('Specify that the input CSV file has no header row. '
-              'Will create default headers (a,b,c,...).'))
-    display_group.add_argument(
-        '-N', '--linenumbers', dest='line_numbers', action='store_true',
+        '-N', '--line-numbers', dest='line_numbers', action='store_true',
+        default=ENV_LINE_NUMBERS.get(),
         help='Show line numbers in the pager')
     display_group.add_argument(
-        '-s', '--table-style', dest='table_style', type=str, choices=list(Box.table_styles.keys()), default='base',
+        '-s', '--table-style', dest='table_style', type=str, choices=list(Box.table_styles.keys()),
+        default=ENV_TABLE_STYLE.get(),
         help='Display style for the table, default is `base`')
     display_group.add_argument(
         '--cat', dest='cat', action='store_true',
         help='Behave like cat, print to stdout directly')
+    display_group.add_argument(
+        '-H', '--no-header-row', dest='no_header_row', action='store_true',
+        help=('Specify that the input CSV file has no header row. '
+              'Will create default headers (a,b,c,...).'))
 
     # file options
     file_group = parser.add_argument_group('File options')
@@ -107,6 +124,14 @@ def init_parser():
         help='Ignore whitespace immediately following the delimiter.')
 
     return parser
+
+
+def parse_args(parser):
+    args = parser.parse_args()
+
+    # reader args
+    reader_kwgs = get_reader_kwargs(args)
+    return args, reader_kwgs
 
 
 def get_reader_kwargs(args):
