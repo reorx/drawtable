@@ -2,12 +2,118 @@
 
 from __future__ import print_function
 import sys
+import collections
 
 
 PY2 = sys.version_info.major == 2
 
 if PY2:
     range = xrange  # NOQA
+
+
+class BaseStyle(object):
+    char_line_left = ''
+    char_line_middle = ''
+    char_line_right = ''
+
+    has_sep = False
+    has_footer = False
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(k, v)
+
+        self.margin_y_str = None
+        self.sep_str = None
+
+    def prepare_margin_y(self, cells_width):
+        charlen = sum(cells_width) + len(cells_width) + 1
+        self.margin_y_str = self.char_line_left + charlen * ' ' + self.char_line_right
+
+    def prepare_sep(self, cells_width):
+        charlen = sum(cells_width) + len(cells_width) - 1
+        self.sep_str = self.char_line_left + charlen * ' ' + self.char_line_right
+
+    def draw_header(self, sub_row_cells_gen, cells_width):
+        header = ''
+        for sub_row_cells in sub_row_cells_gen:
+            header += self.char_line_left + self.char_line_middle.join(sub_row_cells) + self.char_line_right + '\n'
+        return header[:-1]
+
+    def draw_line(self, cells_gen):
+        return self.char_line_left + self.char_line_middle.join(cells_gen) + self.char_line_right
+
+    def draw_footer(self, cells_width):
+        charlen = sum(cells_width) + len(cells_width) - 1
+        return self.char_line_left + charlen * ' ' + self.char_line_right
+
+
+class BoxStyle(BaseStyle):
+    char_line_left = '│'
+    char_line_middle = '│'
+    char_line_right = '│'
+
+    has_sep = True
+    has_footer = True
+
+    def prepare_sep(self, cells_width):
+        """
+        ├─────┼─────┼─────┤
+        """
+        cells = []
+        for cell_width in cells_width:
+            cells.append(cell_width * '─')
+        self.sep_str = '├' + '┼'.join(cells) + '┤'
+
+    def draw_header(self, sub_row_cells_gen, cells_width):
+        """
+        ┌─────┬─────┬─────┐
+        ├─────┼─────┼─────┤
+        """
+        lines = []
+
+        cells = []
+        for cell_width in cells_width:
+            cells.append(cell_width * '─')
+        lines.append('┌' + '┬'.join(cells) + '┐')
+
+        for sub_row_cells in sub_row_cells_gen:
+            lines.append(self.draw_line(sub_row_cells))
+
+        lines.append(self.sep_str)
+        return '\n'.join(lines)
+
+    def draw_footer(self, cells_width):
+        """
+        └─────┴─────┴─────┘
+        """
+        cells = []
+        for cell_width in cells_width:
+            cells.append(cell_width * '─')
+        return '└' + '┴'.join(cells) + '┘'
+
+
+class MarkdownStyle(BaseStyle):
+    char_line_left = '|'
+    char_line_middle = '|'
+    char_line_right = '|'
+
+    def draw_header(self, sub_row_cells_gen, cells_width):
+        """
+        | xxx | ooo |
+        | --- | --- |
+        """
+        lines = []
+
+        for sub_row_cells in sub_row_cells_gen:
+            lines.append(self.draw_line(sub_row_cells))
+
+        cells = []
+        for cell_width in cells_width:
+            cells.append(cell_width * '-')
+        lines.append(self.draw_line(cells))
+
+        return '\n'.join(lines)
 
 
 class Box(object):
@@ -17,7 +123,13 @@ class Box(object):
         'center': '^',
     }
 
-    def __init__(self, margin_x=1, margin_y=0, align='left', max_col_width=16):
+    table_styles = {
+        'base': BaseStyle,
+        'box': BoxStyle,
+        'markdown': MarkdownStyle,
+    }
+
+    def __init__(self, margin_x=1, margin_y=0, align='left', max_col_width=16, table_style='box'):
         self.margin_x = margin_x
         self.margin_x_str = ' ' * margin_x
         self.margin_y = margin_y
@@ -27,15 +139,16 @@ class Box(object):
         except KeyError:
             raise ValueError('align must be one of {}'.format(self.align_marks.keys()))
         self.max_col_width = max_col_width
+        self.table_style = self.table_styles[table_style]()
 
     def preprocess_data(self, data):
-        #if not isinstance(data, list):
-        #    raise TypeError('data must be list, get: {:r}'.format(data))
+        if not isinstance(data, collections.Iterable):
+            raise TypeError('data must be iterable, get: {:r}'.format(data))
         cols = {}
         rows = []
-        datalen = 0
+        rowslen = 0
         for row in data:
-            datalen += 1
+            rowslen += 1
             rows.append(row)
             if not isinstance(row, list):
                 raise TypeError('row in data must be list, get: {:r}'.format(row))
@@ -45,23 +158,61 @@ class Box(object):
                 col = cols.setdefault(index, [])
                 col.append(i)
         cols_width = {k: min([max(map(len, v)), self.max_col_width]) for k, v in cols.items()}
-        return rows, cols, cols_width, datalen
+        return rows, rowslen, cols, cols_width
 
-    def _draw_line(self, row, cols_num, cols_width):
-        cells = []
+    def cells_generator(self, values, cols_num, cols_width):
         for index in range(cols_num):
             try:
-                i = row[index]
+                i = values[index]
             except IndexError:
                 i = ''
             width = cols_width[index]
             tmpl = '{:' + self.align_mark + str(width) + '}'
             text = tmpl.format(i)
             cell = self.margin_x_str + text + self.margin_x_str
-            cells.append(cell)
-        cells = [''] + cells + ['']
-        line = '│'.join(cells)
-        return line
+            yield cell
+
+    def cell_width(self, col_width):
+        return self.margin_x * 2 + col_width
+
+    def sub_row_cells_generator(self, row, cols_num, cols_width):
+        cols_split = {}
+        max_items = 0
+        for index in range(cols_num):
+            try:
+                i = row[index]
+            except IndexError:
+                i = ''
+            sp = self._split_text(i)
+            if len(sp) > max_items:
+                max_items = len(sp)
+            cols_split[index] = sp
+
+        for row_index in range(max_items):
+            sub_row = []
+            for col_index in range(cols_num):
+                sp = cols_split[col_index]
+                try:
+                    sub_row.append(sp[row_index])
+                except IndexError:
+                    sub_row.append('')
+            yield self.cells_generator(sub_row, cols_num, cols_width)
+
+    def draw_row(self, sub_row_cells_gen):
+        sub_lines = []
+        for _i in range(self.margin_y):
+            sub_lines.append(self.table_style.margin_y_str)
+
+        for sub_row_cells in sub_row_cells_gen:
+            sub_lines.append(
+                self.table_style.draw_line(sub_row_cells)
+            )
+
+        for _i in range(self.margin_y):
+            sub_lines.append(self.table_style.margin_y_str)
+
+        #print(sub_lines, row)
+        return '\n'.join(sub_lines)
 
     def _split_by_max_width(self, text):
         n = self.max_col_width
@@ -75,63 +226,6 @@ class Box(object):
             sp += self._split_by_max_width(i)
         return sp
 
-    def draw_line(self, row, cols_num, cols_width):
-        cols_split = {}
-        max_items = 0
-        for index in range(cols_num):
-            try:
-                i = row[index]
-            except IndexError:
-                i = ''
-            sp = self._split_text(i)
-            if len(sp) > max_items:
-                max_items = len(sp)
-            cols_split[index] = sp
-
-        sub_rows = []
-        for row_index in range(max_items):
-            sub_row = []
-            for col_index in range(cols_num):
-                sp = cols_split[col_index]
-                try:
-                    sub_row.append(sp[row_index])
-                except IndexError:
-                    sub_row.append('')
-            sub_rows.append(sub_row)
-        sub_lines = [self._draw_line(r, cols_num, cols_width) for r in sub_rows]
-        #print(sub_rows, sub_lines, row)
-        return '\n'.join(sub_lines)
-
-    def _cell_width(self, col_width):
-        return self.margin_x * 2 + col_width
-
-    def draw_top(self, cols_num, cols_width):
-        """
-        ┌─────┬─────┬─────┐
-        """
-        cells = []
-        for index in range(cols_num):
-            cells.append(self._cell_width(cols_width[index]) * '─')
-        return '┌' + '┬'.join(cells) + '┐'
-
-    def draw_sep(self, cols_num, cols_width):
-        """
-        ├─────┼─────┼─────┤
-        """
-        cells = []
-        for index in range(cols_num):
-            cells.append(self._cell_width(cols_width[index]) * '─')
-        return '├' + '┼'.join(cells) + '┤'
-
-    def draw_bottom(self, cols_num, cols_width):
-        """
-        └─────┴─────┴─────┘
-        """
-        cells = []
-        for index in range(cols_num):
-            cells.append(self._cell_width(cols_width[index]) * '─')
-        return '└' + '┴'.join(cells) + '┘'
-
     def draw(self, data, writer=None):
         """
         line:
@@ -140,31 +234,38 @@ class Box(object):
         cell:
         <margin-x><text><margin-x>
         """
-        rows, cols, cols_width, datalen = self.preprocess_data(data)
-        cols_num = len(cols)
-        margin_y_line = self._draw_line(['' for i in range(cols_num)], cols_num, cols_width)
-        sep_line = self.draw_sep(cols_num, cols_width)
-
-        lines = [self.draw_top(cols_num, cols_width)]
-
-        row_last_index = datalen - 1
-        for row_index, row in enumerate(rows):
-            for _i in range(self.margin_y):
-                lines.append(margin_y_line)
-            lines.append(self.draw_line(row, cols_num, cols_width))
-            for _i in range(self.margin_y):
-                lines.append(margin_y_line)
-            if row_index != row_last_index:
-                lines.append(sep_line)
-
-        lines.append(self.draw_bottom(cols_num, cols_width))
-
         if writer is None:
             def writer(s):
                 sys.stdout.write(s)
 
-        for i in lines:
-            writer(i + '\n')
+        rows, rowslen, cols, cols_width = self.preprocess_data(data)
+        cols_num = len(cols)
+        cells_width = [self.cell_width(cols_width[i]) for i in range(cols_num)]
+        ts = self.table_style
+
+        ts.prepare_margin_y(cells_width)
+        ts.prepare_sep(cells_width)
+
+        row_strs = []
+
+        def append_and_write(row_str):
+            row_strs.append(row_str)
+            writer(row_str + '\n')
+
+        row_last_index = rowslen - 1
+        for row_index, row in enumerate(rows):
+            sub_row_cells_gen = self.sub_row_cells_generator(row, cols_num, cols_width)
+
+            if row_index == 0:
+                append_and_write(ts.draw_header(sub_row_cells_gen, cells_width))
+                continue
+
+            append_and_write(self.draw_row(sub_row_cells_gen))
+            if ts.has_sep and row_index != row_last_index:
+                append_and_write(ts.sep_str)
+
+        if ts.has_footer:
+            append_and_write(ts.draw_footer(cells_width))
 
 
 if __name__ == '__main__':

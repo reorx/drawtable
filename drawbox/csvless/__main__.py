@@ -18,7 +18,10 @@ def main():
     f = open_file(args.file, encoding=args.encoding)
     reader = csv.reader(f, **get_reader_kwargs(args))
 
-    box = Box(max_col_width=args.max_column_width)
+    box = Box(
+        max_col_width=args.max_column_width,
+        table_style=args.table_style,
+    )
 
     less_cmd = ['less', '-S']
     if args.line_numbers:
@@ -88,7 +91,7 @@ def init_parser():
         '-N', '--linenumbers', dest='line_numbers', action='store_true',
         help='Show line numbers in the pager')
     parser.add_argument(
-        '--table-style', dest='table_style', type=str, choices=['box', 'markdown'], default='box',
+        '--table-style', dest='table_style', type=str, choices=['box', 'markdown'], default='base',
         help='')
 
     return parser
