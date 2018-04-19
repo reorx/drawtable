@@ -4,7 +4,7 @@ from __future__ import print_function
 import sys
 import collections
 import string
-from string import ascii_lowercase
+from drawbox.styles import BaseStyle, BoxStyle, MarkdownStyle
 
 
 PY2 = sys.version_info.major == 2
@@ -15,111 +15,6 @@ if PY2:
 
 auto_header_letters = string.ascii_uppercase
 auto_header_letters_num = len(auto_header_letters)
-
-
-class BaseStyle(object):
-    char_line_left = ''
-    char_line_middle = ''
-    char_line_right = ''
-
-    has_sep = False
-    has_footer = False
-
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(k, v)
-
-        self.margin_y_str = None
-        self.sep_str = None
-
-    def prepare_margin_y(self, cells_width):
-        charlen = sum(cells_width) + len(cells_width) + 1
-        self.margin_y_str = self.char_line_left + charlen * ' ' + self.char_line_right
-
-    def prepare_sep(self, cells_width):
-        charlen = sum(cells_width) + len(cells_width) - 1
-        self.sep_str = self.char_line_left + charlen * ' ' + self.char_line_right
-
-    def draw_header(self, sub_row_cells_gen, cells_width):
-        header = ''
-        for sub_row_cells in sub_row_cells_gen:
-            header += self.char_line_left + self.char_line_middle.join(sub_row_cells) + self.char_line_right + '\n'
-        return header[:-1]
-
-    def draw_line(self, cells_gen):
-        return self.char_line_left + self.char_line_middle.join(cells_gen) + self.char_line_right
-
-    def draw_footer(self, cells_width):
-        charlen = sum(cells_width) + len(cells_width) - 1
-        return self.char_line_left + charlen * ' ' + self.char_line_right
-
-
-class BoxStyle(BaseStyle):
-    char_line_left = '│'
-    char_line_middle = '│'
-    char_line_right = '│'
-
-    has_sep = True
-    has_footer = True
-
-    def prepare_sep(self, cells_width):
-        """
-        ├─────┼─────┼─────┤
-        """
-        cells = []
-        for cell_width in cells_width:
-            cells.append(cell_width * '─')
-        self.sep_str = '├' + '┼'.join(cells) + '┤'
-
-    def draw_header(self, sub_row_cells_gen, cells_width):
-        """
-        ┌─────┬─────┬─────┐
-        ├─────┼─────┼─────┤
-        """
-        lines = []
-
-        cells = []
-        for cell_width in cells_width:
-            cells.append(cell_width * '─')
-        lines.append('┌' + '┬'.join(cells) + '┐')
-
-        for sub_row_cells in sub_row_cells_gen:
-            lines.append(self.draw_line(sub_row_cells))
-
-        lines.append(self.sep_str)
-        return '\n'.join(lines)
-
-    def draw_footer(self, cells_width):
-        """
-        └─────┴─────┴─────┘
-        """
-        cells = []
-        for cell_width in cells_width:
-            cells.append(cell_width * '─')
-        return '└' + '┴'.join(cells) + '┘'
-
-
-class MarkdownStyle(BaseStyle):
-    char_line_left = '|'
-    char_line_middle = '|'
-    char_line_right = '|'
-
-    def draw_header(self, sub_row_cells_gen, cells_width):
-        """
-        | xxx | ooo |
-        | --- | --- |
-        """
-        lines = []
-
-        for sub_row_cells in sub_row_cells_gen:
-            lines.append(self.draw_line(sub_row_cells))
-
-        cells = []
-        for cell_width in cells_width:
-            cells.append(cell_width * '-')
-        lines.append(self.draw_line(cells))
-
-        return '\n'.join(lines)
 
 
 class Box(object):
@@ -135,9 +30,16 @@ class Box(object):
         'markdown': MarkdownStyle,
     }
 
+    # from `less`:
+    # |_____XX_CONTENT|
+    # explain:
+    # `|` is the border of terminal window, `_` is space, `XX` is line number,
+    # `CONTENT` is the actual value of the line
+    row_number_width = 7
+
     def __init__(self, margin_x=1, margin_y=0, align='left',
                  max_col_width=16, table_style='box',
-                 auto_header=False):
+                 auto_header=False, row_numbers=False):
         self.margin_x = margin_x
         self.margin_x_str = ' ' * margin_x
         self.margin_y = margin_y
@@ -149,14 +51,24 @@ class Box(object):
         self.max_col_width = max_col_width
         self.table_style = self.table_styles[table_style]()
         self.auto_header = auto_header
+        self.row_numbers = row_numbers
+        self.row_number_tmpl = '{:>' + str(self.row_number_width) + '} '
+        self.row_number_empty = self.row_number_tmpl.format('')
 
-    def preprocess_data(self, data):
+    def preprocess_data(self, data, has_header=True):
         if not isinstance(data, collections.Iterable):
             raise TypeError('data must be iterable, get: {:r}'.format(data))
         cols = {}
+        header = None
         rows = []
         rowslen = 0
+        count = 0
         for row in data:
+            count += 1
+            if has_header and count == 1:
+                header = row
+                continue
+
             rowslen += 1
             rows.append(row)
             if not isinstance(row, list):
@@ -167,7 +79,7 @@ class Box(object):
                 col = cols.setdefault(index, [])
                 col.append(i)
         cols_width = {k: min([max(map(len, v)), self.max_col_width]) for k, v in cols.items()}
-        return rows, rowslen, cols, cols_width
+        return header, rows, rowslen, cols, cols_width
 
     def cells_generator(self, values, cols_num, cols_width):
         for index in range(cols_num):
@@ -207,18 +119,23 @@ class Box(object):
                     sub_row.append('')
             yield self.cells_generator(sub_row, cols_num, cols_width)
 
-    def draw_row(self, sub_row_cells_gen):
+    def draw_row(self, sub_row_cells_gen, row_num):
         sub_lines = []
         for _i in range(self.margin_y):
-            sub_lines.append(self.table_style.margin_y_str)
+            sub_lines.append(self.format_line(self.table_style.margin_y_str))
 
+        sub_row_count = 0
         for sub_row_cells in sub_row_cells_gen:
-            sub_lines.append(
-                self.table_style.draw_line(sub_row_cells)
-            )
+            line = self.table_style.draw_line(sub_row_cells)
+            if self.row_numbers:
+                if sub_row_count == 0:
+                    sub_lines.append(self.format_line_with_number(line, row_num))
+                else:
+                    sub_lines.append(self.format_line(line))
+                sub_row_count += 1
 
         for _i in range(self.margin_y):
-            sub_lines.append(self.table_style.margin_y_str)
+            sub_lines.append(self.format_line(self.table_style.margin_y_str))
 
         #print(sub_lines, row)
         return '\n'.join(sub_lines)
@@ -246,6 +163,22 @@ class Box(object):
             vs.append(v)
         return vs
 
+    def format_row_str(self, row_str, row_num=''):
+        if self.row_numbers:
+            return self.row_number_tmpl.format(row_num) + row_str
+        return row_str
+
+    def format_lines(self, lines):
+        return '\n'.join(self.format_line(i) for i in lines)
+
+    def format_line(self, line):
+        if self.row_numbers:
+            return self.row_number_empty + line
+        return line
+
+    def format_line_with_number(self, line, num):
+        return self.row_number_tmpl.format(num) + line
+
     def draw(self, data, writer=None):
         """
         line:
@@ -258,8 +191,14 @@ class Box(object):
             def writer(s):
                 sys.stdout.write(s)
 
-        rows, rowslen, cols, cols_width = self.preprocess_data(data)
+        has_header = True
+        if self.auto_header:
+            has_header = False
+        header, rows, rowslen, cols, cols_width = self.preprocess_data(data, has_header)
         cols_num = len(cols)
+        if not has_header:
+            header = self.get_auto_header_values(cols_num, cols_width)
+
         cells_width = [self.cell_width(cols_width[i]) for i in range(cols_num)]
         ts = self.table_style
 
@@ -272,29 +211,25 @@ class Box(object):
             row_strs.append(row_str)
             writer(row_str + '\n')
 
-        if self.auto_header:
-            append_and_write(
-                ts.draw_header(
-                    self.sub_row_cells_generator(
-                        self.get_auto_header_values(cols_num, cols_width),
-                        cols_num, cols_width),
+        append_and_write(
+            self.format_lines(
+                ts.draw_header_lines(
+                    self.sub_row_cells_generator(header, cols_num, cols_width),
                     cells_width)
             )
+        )
 
         row_last_index = rowslen - 1
         for row_index, row in enumerate(rows):
+            row_num = row_index + 1
             sub_row_cells_gen = self.sub_row_cells_generator(row, cols_num, cols_width)
 
-            if not self.auto_header and row_index == 0:
-                append_and_write(ts.draw_header(sub_row_cells_gen, cells_width))
-                continue
-
-            append_and_write(self.draw_row(sub_row_cells_gen))
+            append_and_write(self.draw_row(sub_row_cells_gen, row_num))
             if ts.has_sep and row_index != row_last_index:
-                append_and_write(ts.sep_str)
+                append_and_write(self.format_line(ts.sep_str))
 
         if ts.has_footer:
-            append_and_write(ts.draw_footer(cells_width))
+            append_and_write(self.format_line(ts.draw_footer(cells_width)))
 
 
 if __name__ == '__main__':

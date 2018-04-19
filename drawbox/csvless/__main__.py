@@ -9,7 +9,7 @@ from drawbox.csvless.getenv import Env
 
 # TODO
 # - [x] auto header
-# - [ ] generated line number
+# - [ ] generated row number
 # - [ ] wrap row
 
 
@@ -28,6 +28,7 @@ def main():
         max_col_width=args.max_column_width,
         table_style=args.table_style,
         auto_header=args.auto_header,
+        row_numbers=args.row_numbers,
     )
 
     if args.cat:
@@ -96,6 +97,9 @@ def init_parser():
         '-N', '--line-numbers', dest='line_numbers', action='store_true',
         default=ENV_LINE_NUMBERS.get(),
         help='Show line numbers in the pager')
+    display_group.add_argument(
+        '-n', '--row-numbers', dest='row_numbers', action='store_true',
+        help='Show row numbers')
     display_group.add_argument(
         '-s', '--table-style', dest='table_style', type=str, choices=list(Box.table_styles.keys()),
         default=ENV_TABLE_STYLE.get(),
