@@ -23,23 +23,27 @@ def main():
         table_style=args.table_style,
     )
 
-    less_cmd = ['less', '-S']
-    if args.line_numbers:
-        less_cmd.append('-N')
-
-    p = subprocess.Popen(less_cmd, stdin=subprocess.PIPE)
-
-    if PY2:
-        def writer(line):
-            p.stdin.write(line)
+    if args.cat:
+        box.draw(reader)
+        f.close()
     else:
-        def writer(line):
-            p.stdin.write(line.encode())
+        less_cmd = ['less', '-S']
+        if args.line_numbers:
+            less_cmd.append('-N')
 
-    box.draw(reader, writer=writer)
+        p = subprocess.Popen(less_cmd, stdin=subprocess.PIPE)
 
-    f.close()
-    p.communicate()
+        if PY2:
+            def writer(line):
+                p.stdin.write(line)
+        else:
+            def writer(line):
+                p.stdin.write(line.encode())
+
+        box.draw(reader, writer=writer)
+
+        f.close()
+        p.communicate()
 
 
 def init_parser():
@@ -47,52 +51,60 @@ def init_parser():
     parser = argparse.ArgumentParser(
         description='Render a CSV file in the console as a Markdown-compatible, fixed-width table.',
         epilog='',
+        usage='csvless [options] FILE',
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     # arguments
     parser.add_argument('file', metavar="FILE", type=str, help="csv file")
 
-    # reader options
-    parser.add_argument(
-        '-d', '--delimiter', dest='delimiter',
-        help='Delimiting character of the input CSV file.')
-    parser.add_argument(
-        '-b', '--no-doublequote', dest='doublequote', action='store_false',
-        help='Whether or not double quotes are doubled in the input CSV file.')
-    parser.add_argument(
-        '-p', '--escapechar', dest='escapechar',
-        help=('Character used to escape the delimiter if --quoting 3 ("Quote None") '
-              'is specified and to escape the QUOTECHAR if --no-doublequote is specified.'))
-    parser.add_argument(
-        '-q', '--quotechar', dest='quotechar',
-        help='Character used to quote strings in the input CSV file.')
-    parser.add_argument(
-        '-u', '--quoting', dest='quoting', type=int, choices=[0, 1, 2, 3],
-        help=('Quoting style used in the input CSV file. 0 = Quote Minimal, '
-              '1 = Quote All, 2 = Quote Non-numeric, 3 = Quote None.'))
-    parser.add_argument(
-        '-S', '--skipinitialspace', dest='skipinitialspace', action='store_true',
-        help='Ignore whitespace immediately following the delimiter.')
+    # display options
+    display_group = parser.add_argument_group('Display options')
+    display_group.add_argument(
+        '-w', '--max-column-width', dest='max_column_width', type=int, default=32,
+        help='Truncate all columns to at most this width. The remainder will be replaced with ellipsis.')
+    display_group.add_argument(
+        '-H', '--no-header-row', dest='no_header_row', action='store_true',
+        required=False,
+        help=('Specify that the input CSV file has no header row. '
+              'Will create default headers (a,b,c,...).'))
+    display_group.add_argument(
+        '-N', '--linenumbers', dest='line_numbers', action='store_true',
+        help='Show line numbers in the pager')
+    display_group.add_argument(
+        '-s', '--table-style', dest='table_style', type=str, choices=list(Box.table_styles.keys()), default='base',
+        help='Display style for the table, default is `base`')
+    display_group.add_argument(
+        '--cat', dest='cat', action='store_true',
+        help='Behave like cat, print to stdout directly')
 
     # file options
-    parser.add_argument(
+    file_group = parser.add_argument_group('File options')
+    file_group.add_argument(
         '-e', '--encoding', dest='encoding', default='utf-8',
         help='Specify the encoding of the input CSV file.')
 
-    # display options
-    parser.add_argument(
-        '--max-column-width', dest='max_column_width', type=int, default=32,
-        help='Truncate all columns to at most this width. The remainder will be replaced with ellipsis.')
-    parser.add_argument(
-        '-H', '--no-header-row', dest='no_header_row', action='store_true',
-        help=('Specify that the input CSV file has no header row. '
-              'Will create default headers (a,b,c,...).'))
-    parser.add_argument(
-        '-N', '--linenumbers', dest='line_numbers', action='store_true',
-        help='Show line numbers in the pager')
-    parser.add_argument(
-        '--table-style', dest='table_style', type=str, choices=['box', 'markdown'], default='base',
-        help='')
+    # reader options
+    reader_group = parser.add_argument_group('CSV reader options')
+    reader_group.add_argument(
+        '-d', '--delimiter', dest='delimiter',
+        help='Delimiting character of the input CSV file.')
+    reader_group.add_argument(
+        '--no-doublequote', dest='doublequote', action='store_false',
+        help='Whether or not double quotes are doubled in the input CSV file.')
+    reader_group.add_argument(
+        '--escapechar', dest='escapechar',
+        help=('Character used to escape the delimiter if --quoting 3 ("Quote None") '
+              'is specified and to escape the QUOTECHAR if --no-doublequote is specified.'))
+    reader_group.add_argument(
+        '--quotechar', dest='quotechar',
+        help='Character used to quote strings in the input CSV file.')
+    reader_group.add_argument(
+        '--quoting', dest='quoting', type=int, choices=[0, 1, 2, 3],
+        help=('Quoting style used in the input CSV file. 0 = Quote Minimal, '
+              '1 = Quote All, 2 = Quote Non-numeric, 3 = Quote None.'))
+    reader_group.add_argument(
+        '--skipinitialspace', dest='skipinitialspace', action='store_true',
+        help='Ignore whitespace immediately following the delimiter.')
 
     return parser
 
