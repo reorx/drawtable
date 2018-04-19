@@ -100,8 +100,8 @@ def init_parser():
         help='Character used to quote strings in the input CSV file.')
     reader_group.add_argument(
         '--quoting', dest='quoting', type=int, choices=[0, 1, 2, 3],
-        help=('Quoting style used in the input CSV file. 0 = Quote Minimal, '
-              '1 = Quote All, 2 = Quote Non-numeric, 3 = Quote None.'))
+        help=('Quoting style used in the input CSV file. 0 = Quote All, '
+              '1 = Quote Minimal, 2 = Quote Non-numeric, 3 = Quote None.'))
     reader_group.add_argument(
         '--skipinitialspace', dest='skipinitialspace', action='store_true',
         help='Ignore whitespace immediately following the delimiter.')
@@ -115,10 +115,21 @@ def get_reader_kwargs(args):
     """
     kwargs = {}
 
-    for arg in ('delimiter', 'doublequote', 'escapechar', 'quotechar', 'quoting', 'skipinitialspace'):
+    if args.delimiter == '\\t':
+        args.delimiter = '\t'
+
+    for arg in ('delimiter', 'doublequote', 'escapechar', 'quotechar', 'skipinitialspace'):
         value = getattr(args, arg)
         if value is not None:
             kwargs[arg] = value
+
+    if args.quoting:
+        kwargs['quoting'] = {
+            0: csv.QUOTE_ALL,
+            1: csv.QUOTE_MINIMAL,
+            2: csv.QUOTE_NONNUMERIC,
+            3: csv.QUOTE_NONE,
+        }[args.quoting]
     return kwargs
 
 
