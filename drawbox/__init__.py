@@ -101,13 +101,20 @@ class Box(object):
 
     def sub_row_cells_generator(self, row, cols_num, cols_width):
         """
+        row: [
+            'a very long line.',
+            'short line',
+            'a',
+            '',
+        ]
 
         cols_split:
-        [
-            ['a very l' ['short li', ['a'], ['']
+        {
+            0:          1:           2:     3:
+            ['a very l' ['short li', ['a'], [''],
              'ong line'  'ne'],
              '.'],
-        ]
+        {
 
         sub_row:
         [
@@ -140,16 +147,15 @@ class Box(object):
                     sub_row.append('')
             yield self.cells_generator(sub_row, cols_num, cols_width)
 
-    def _split_by_max_width(self, text):
-        n = self.max_col_width
-        if not text:
-            return ['']
-        return [text[i:i + n] for i in range(0, len(text), n)]
-
     def _split_text(self, text):
         sp = []
         for i in text.split('\n'):
-            sp += self._split_by_max_width(i)
+            n = self.max_col_width
+            if text:
+                for j in range(0, len(text), self.max_col_width):
+                    sp.append(text[j:j + self.max_col_width])
+            else:
+                sp.append(i)
         return sp
 
     def draw_row(self, sub_row_cells_gen, row_num):
