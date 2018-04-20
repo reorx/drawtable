@@ -58,7 +58,8 @@ class Box(object):
         self.row_number_empty = self.row_number_tmpl.format('')
         self.wrap_row = wrap_row
 
-    def preprocess_data(self, data, has_header=True):
+    @staticmethod
+    def preprocess_data(data, has_header=True):
         if not isinstance(data, collections.Iterable):
             raise TypeError('data must be iterable, get: {:r}'.format(data))
         cols_width = {}
@@ -87,7 +88,7 @@ class Box(object):
                     cols_width[index] = i_len
         return header, rows, rowslen, cols_width
 
-    def sub_row_cells_generator(self, row, cols_num, cols_width):
+    def sub_row_generator(self, row, cols_num, cols_width):
         """
         row: [
             'a very long line.',
@@ -104,12 +105,10 @@ class Box(object):
              '.'],
         {
 
-        sub_row:
-        [
-            ['a very l', 'short', 'a', ''],
-            ['ong line', 'ne', ''],
-            ['.', '', ''],
-        ]
+        sub_row(s):
+        ['a very l', 'short', 'a', ''],
+        ['ong line', 'ne', ''],
+        ['.', '', ''],
         """
         # it's ok to define cols_split as `[]`, but `{}` is quicker in timeit result
         cols_split = {}
@@ -125,24 +124,21 @@ class Box(object):
                 max_items = sp_len
             cols_split[index] = sp
 
-        for row_index in range(max_items):
-            sub_row = []
-            for col_index in range(cols_num):
-                sp = cols_split[col_index]
-                try:
-                    sub_row.append(sp[row_index])
-                except IndexError:
-                    sub_row.append('')
-            yield self.cells_generator(sub_row, cols_num, cols_width)
+        for sub_row_index in range(max_items):
+            yield self.cell_generator_from_sub_row(sub_row_index, cols_split, cols_num, cols_width)
 
-    def cells_generator(self, values, cols_num, cols_width):
-        for index in range(cols_num):
-            i = values[index]
-            tmpl = '{:' + self.align_mark + str(cols_width[index]) + '}'
-            cell = self.margin_x_str + tmpl.format(i) + self.margin_x_str
+    def cell_generator_from_sub_row(self, sub_row_index, cols_split, cols_num, cols_width):
+        for col_index in range(cols_num):
+            sp = cols_split[col_index]
+            try:
+                v = sp[sub_row_index]
+            except IndexError:
+                v = ''
+            tmpl = '{:' + self.align_mark + str(cols_width[col_index]) + '}'
+            cell = self.margin_x_str + tmpl.format(v) + self.margin_x_str
             yield cell
 
-    def cells_generator_no_wrap(self, values, cols_num, cols_width):
+    def cell_generator(self, values, cols_num, cols_width):
         for index in range(cols_num):
             col_width = cols_width[index]
             try:
@@ -166,14 +162,14 @@ class Box(object):
                 sp.append(i)
         return sp
 
-    def draw_row(self, sub_row_cells_gen, row_num):
+    def draw_row_str_from_sub_rows(self, sub_row_gen, row_num):
         sub_lines = []
         for _i in range(self.margin_y):
             sub_lines.append(self.format_line(self.table_style.margin_y_str))
 
         sub_row_count = 0
-        for sub_row_cells in sub_row_cells_gen:
-            line = self.table_style.draw_line(sub_row_cells)
+        for cell_gen in sub_row_gen:
+            line = self.table_style.draw_line(cell_gen)
             if self.row_numbers and sub_row_count == 0:
                 sub_lines.append(self.format_line_with_number(line, row_num))
             else:
@@ -185,12 +181,12 @@ class Box(object):
 
         return '\n'.join(sub_lines)
 
-    def draw_row_no_wrap(self, cells_gen, row_num):
+    def draw_row_str(self, cell_gen, row_num):
         sub_lines = []
         for _i in range(self.margin_y):
             sub_lines.append(self.format_line(self.table_style.margin_y_str))
 
-        line = self.table_style.draw_line(cells_gen)
+        line = self.table_style.draw_line(cell_gen)
         if self.row_numbers:
             sub_lines.append(self.format_line_with_number(line, row_num))
         else:
@@ -212,11 +208,6 @@ class Box(object):
                 v = auto_header_letters[n] + str(int(i / auto_header_letters_num))
             vs.append(v)
         return vs
-
-    def format_row_str(self, row_str, row_num=''):
-        if self.row_numbers:
-            return self.row_number_tmpl.format(row_num) + row_str
-        return row_str
 
     def format_lines(self, lines):
         return '\n'.join(self.format_line(i) for i in lines)
@@ -276,7 +267,7 @@ class Box(object):
         append_and_write(
             self.format_lines(
                 ts.draw_header_lines(
-                    self.sub_row_cells_generator(header, cols_num, cols_width),
+                    self.sub_row_generator(header, cols_num, cols_width),
                     cells_width)
             )
         )
@@ -284,20 +275,32 @@ class Box(object):
         row_num = 0
 
         if self.wrap_row:
+            # wrap row hierarchy:
+            #
+            # row -> sub row generator
+            #        |
+            #        for-> cell generator
+            #              |
+            #              for-> cell
             for row in rows:
                 row_num += 1
-                sub_row_cells_gen = self.sub_row_cells_generator(row, cols_num, cols_width)
+                sub_row_gen = self.sub_row_generator(row, cols_num, cols_width)
 
-                append_and_write(self.draw_row(sub_row_cells_gen, row_num))
+                append_and_write(self.draw_row_str_from_sub_rows(sub_row_gen, row_num))
                 if ts.has_sep and row_num != rowslen:
                     append_and_write(self.format_line(ts.sep_str))
         else:
+            # no wrap row hierarchy:
+            #
+            # row -> cell generator
+            #        |
+            #        for-> cell
             for row in rows:
                 row_num += 1
 
                 append_and_write(
-                    self.draw_row_no_wrap(
-                        self.cells_generator_no_wrap(row, cols_num, cols_width), row_num))
+                    self.draw_row_str(
+                        self.cell_generator(row, cols_num, cols_width), row_num))
                 if ts.has_sep and row_num != rowslen:
                     append_and_write(self.format_line(ts.sep_str))
 
