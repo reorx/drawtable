@@ -17,6 +17,7 @@ auto_header_letters = string.ascii_uppercase
 auto_header_letters_num = len(auto_header_letters)
 
 
+# noinspection PyStringFormat
 class Box(object):
     align_marks = {
         'left': '<',
@@ -55,7 +56,8 @@ class Box(object):
         self.row_number_tmpl = '{:>' + str(self.row_number_width) + '} '
         self.row_number_empty = self.row_number_tmpl.format('')
 
-    def preprocess_data(self, data, has_header=True):
+    @staticmethod
+    def preprocess_data(data, has_header=True):
         if not isinstance(data, collections.Iterable):
             raise TypeError('data must be iterable, get: {:r}'.format(data))
         cols_width = {}
@@ -73,31 +75,16 @@ class Box(object):
             rowslen += 1
             rows.append(row)
 
-            #if not isinstance(row, list):
-            #    raise TypeError('row in data must be list, get: {:r}'.format(row))
+            # if not isinstance(row, list):
+            #     raise TypeError('row in data must be list, get: {:r}'.format(row))
             for index, i in enumerate(row):
-                #if not isinstance(i, str):
+                # if not isinstance(i, str):
                 #    raise TypeError('item in row must be str, get: {:r}'.format(i))
                 i_len = len(i)
                 col_len = cols_width.setdefault(index, i_len)
                 if i_len > col_len:
                     cols_width[index] = i_len
         return header, rows, rowslen, cols_width
-
-    def cells_generator(self, values, cols_num, cols_width):
-        for index in range(cols_num):
-            try:
-                i = values[index]
-            except IndexError:
-                i = ''
-            width = cols_width[index]
-            tmpl = '{:' + self.align_mark + str(width) + '}'
-            text = tmpl.format(i)
-            cell = self.margin_x_str + text + self.margin_x_str
-            yield cell
-
-    def cell_width(self, col_width):
-        return self.margin_x * 2 + col_width
 
     def sub_row_cells_generator(self, row, cols_num, cols_width):
         """
@@ -147,6 +134,13 @@ class Box(object):
                     sub_row.append('')
             yield self.cells_generator(sub_row, cols_num, cols_width)
 
+    def cells_generator(self, values, cols_num, cols_width):
+        for index in range(cols_num):
+            i = values[index]
+            tmpl = '{:' + self.align_mark + str(cols_width[index]) + '}'
+            cell = self.margin_x_str + tmpl.format(i) + self.margin_x_str
+            yield cell
+
     def _split_text(self, text):
         sp = []
         for i in text.split('\n'):
@@ -175,7 +169,6 @@ class Box(object):
         for _i in range(self.margin_y):
             sub_lines.append(self.format_line(self.table_style.margin_y_str))
 
-        #print(sub_lines, row)
         return '\n'.join(sub_lines)
 
     @staticmethod
@@ -205,6 +198,9 @@ class Box(object):
 
     def format_line_with_number(self, line, num):
         return self.row_number_tmpl.format(num) + line
+
+    def cell_width(self, col_width):
+        return self.margin_x * 2 + col_width
 
     def draw(self, data, writer=None):
         """
