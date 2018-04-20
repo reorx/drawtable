@@ -11,7 +11,8 @@ from drawbox.csvless.getenv import Env
 # TODO
 # - [x] auto header
 # - [x] generated row number
-# - [ ] wrap row
+# - [x] wrap row
+# - [ ] column width config for pattern matched file
 
 
 def main():
@@ -39,6 +40,7 @@ def _main(args=None, writer=None):
         table_style=args.table_style,
         auto_header=args.auto_header,
         row_numbers=args.row_numbers,
+        wrap_row=args.wrap_row,
     )
 
     if args.cat:
@@ -82,6 +84,7 @@ def init_parser():
     env_line_numbers = Env('{prefix}_LINE_NUMBERS', type=bool, default=False)
     env_row_numbers = Env('{prefix}_ROW_NUMBERS', type=bool, default=False)
     env_table_style = Env('{prefix}_TABLE_STYLE', type=str, default='base')
+    env_wrap_row = Env('{prefix}_WRAP_ROW', type=bool, default=True)
 
     env_help = 'Environment Variables:\n'
     env_key_max_len = max([len(i.key) for i in Env.instances.values()])
@@ -125,6 +128,10 @@ def init_parser():
         '-H', '--auto-header', dest='auto_header', action='store_true',
         help=('Specify that the input CSV file has no header row. '
               'Will create auto header (a,b,c,...).'))
+    display_group.add_argument(
+        '--no-wrap', dest='wrap_row', action='store_false',
+        default=env_wrap_row.get(),
+        help='No wrap for row, if cell width exceeds max, the content will be truncated.')
 
     # file options
     file_group = parser.add_argument_group('File options')

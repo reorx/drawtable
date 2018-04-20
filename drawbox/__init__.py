@@ -41,7 +41,7 @@ class Box(object):
 
     def __init__(self, margin_x=1, margin_y=0, align='left',
                  max_col_width=16, table_style='box',
-                 auto_header=False, row_numbers=False):
+                 auto_header=False, row_numbers=False, wrap_row=True):
         self.margin_x = margin_x
         self.margin_x_str = ' ' * margin_x
         self.margin_y = margin_y
@@ -56,9 +56,9 @@ class Box(object):
         self.row_numbers = row_numbers
         self.row_number_tmpl = '{:>' + str(self.row_number_width) + '} '
         self.row_number_empty = self.row_number_tmpl.format('')
+        self.wrap_row = wrap_row
 
-    @staticmethod
-    def preprocess_data(data, has_header=True):
+    def preprocess_data(self, data, has_header=True):
         if not isinstance(data, collections.Iterable):
             raise TypeError('data must be iterable, get: {:r}'.format(data))
         cols_width = {}
@@ -142,10 +142,23 @@ class Box(object):
             cell = self.margin_x_str + tmpl.format(i) + self.margin_x_str
             yield cell
 
+    def cells_generator_no_wrap(self, values, cols_num, cols_width):
+        for index in range(cols_num):
+            col_width = cols_width[index]
+            try:
+                i = values[index]
+            except IndexError:
+                i = ''
+            else:
+                # truncate if too long
+                i = truncate_str(i, col_width)
+            tmpl = '{:' + self.align_mark + str(col_width) + '}'
+            cell = self.margin_x_str + tmpl.format(i) + self.margin_x_str
+            yield cell
+
     def _split_text(self, text):
         sp = []
         for i in text.split('\n'):
-            n = self.max_col_width
             if text:
                 for j in range(0, len(text), self.max_col_width):
                     sp.append(text[j:j + self.max_col_width])
@@ -166,6 +179,22 @@ class Box(object):
             else:
                 sub_lines.append(self.format_line(line))
             sub_row_count += 1
+
+        for _i in range(self.margin_y):
+            sub_lines.append(self.format_line(self.table_style.margin_y_str))
+
+        return '\n'.join(sub_lines)
+
+    def draw_row_no_wrap(self, cells_gen, row_num):
+        sub_lines = []
+        for _i in range(self.margin_y):
+            sub_lines.append(self.format_line(self.table_style.margin_y_str))
+
+        line = self.table_style.draw_line(cells_gen)
+        if self.row_numbers:
+            sub_lines.append(self.format_line_with_number(line, row_num))
+        else:
+            sub_lines.append(self.format_line(line))
 
         for _i in range(self.margin_y):
             sub_lines.append(self.format_line(self.table_style.margin_y_str))
@@ -222,12 +251,13 @@ class Box(object):
         if not has_header:
             header = self.get_auto_header_values(len(cols_width))
 
-        # change cols_width according to header
+        # change cols_width according to:
+        # 1. header
+        # 2. config
+        # 3. max_col_width
         for k, h in enumerate(header):
             h_len = len(h)
-            col_width = cols_width.setdefault(k, h_len)
-            if h_len > col_width:
-                cols_width[k] = h_len
+            cols_width[k] = min([max([cols_width.get(k, 0), h_len]), self.max_col_width])
         cols_num = len(cols_width)
 
         cells_width = [self.cell_width(cols_width[i]) for i in range(cols_num)]
@@ -242,6 +272,7 @@ class Box(object):
             row_strs.append(row_str)
             writer(row_str + '\n')
 
+        # always wrap header even if `wrap_row` is false
         append_and_write(
             self.format_lines(
                 ts.draw_header_lines(
@@ -251,13 +282,24 @@ class Box(object):
         )
 
         row_num = 0
-        for row in rows:
-            row_num += 1
-            sub_row_cells_gen = self.sub_row_cells_generator(row, cols_num, cols_width)
 
-            append_and_write(self.draw_row(sub_row_cells_gen, row_num))
-            if ts.has_sep and row_num != rowslen:
-                append_and_write(self.format_line(ts.sep_str))
+        if self.wrap_row:
+            for row in rows:
+                row_num += 1
+                sub_row_cells_gen = self.sub_row_cells_generator(row, cols_num, cols_width)
+
+                append_and_write(self.draw_row(sub_row_cells_gen, row_num))
+                if ts.has_sep and row_num != rowslen:
+                    append_and_write(self.format_line(ts.sep_str))
+        else:
+            for row in rows:
+                row_num += 1
+
+                append_and_write(
+                    self.draw_row_no_wrap(
+                        self.cells_generator_no_wrap(row, cols_num, cols_width), row_num))
+                if ts.has_sep and row_num != rowslen:
+                    append_and_write(self.format_line(ts.sep_str))
 
         if ts.has_footer:
             append_and_write(self.format_line(ts.draw_footer(cells_width)))
@@ -265,6 +307,15 @@ class Box(object):
         self.draw_result = {
             'row_num': row_num,
         }
+
+
+ellipsis_str = '…'
+
+
+def truncate_str(s, max_length):
+    if len(s) > max_length:
+        return s[:max_length - 1] + ellipsis_str
+    return s
 
 
 if __name__ == '__main__':
