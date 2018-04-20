@@ -58,7 +58,7 @@ class Box(object):
     def preprocess_data(self, data, has_header=True):
         if not isinstance(data, collections.Iterable):
             raise TypeError('data must be iterable, get: {:r}'.format(data))
-        cols = {}
+        cols_width = {}
         header = None
         rows = []
         rowslen = 0
@@ -76,12 +76,13 @@ class Box(object):
             #if not isinstance(row, list):
             #    raise TypeError('row in data must be list, get: {:r}'.format(row))
             for index, i in enumerate(row):
-                if not isinstance(i, str):
-                    raise TypeError('item in row must be str, get: {:r}'.format(i))
-                col = cols.setdefault(index, [])
-                col.append(i)
-        cols_width = {k: min([max(map(len, v)), self.max_col_width]) for k, v in cols.items()}
-        return header, rows, rowslen, cols, cols_width
+                #if not isinstance(i, str):
+                #    raise TypeError('item in row must be str, get: {:r}'.format(i))
+                i_len = len(i)
+                col_len = cols_width.setdefault(index, i_len)
+                if i_len > col_len:
+                    cols_width[index] = i_len
+        return header, rows, rowslen, cols_width
 
     def cells_generator(self, values, cols_num, cols_width):
         for index in range(cols_num):
@@ -196,8 +197,8 @@ class Box(object):
         has_header = True
         if self.auto_header:
             has_header = False
-        header, rows, rowslen, cols, cols_width = self.preprocess_data(data, has_header)
-        cols_num = len(cols)
+        header, rows, rowslen, cols_width = self.preprocess_data(data, has_header)
+        cols_num = len(cols_width)
         if not has_header:
             header = self.get_auto_header_values(cols_num, cols_width)
 
