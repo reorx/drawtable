@@ -78,14 +78,15 @@ def init_parser():
     # env vars
     Env.set_prefix('CSVLESS')
 
-    ENV_MAX_COL_WIDTH = Env('{prefix}_MAX_COLUMN_WIDTH', type=int, default=32)
-    ENV_LINE_NUMBERS = Env('{prefix}_LINE_NUMBERS', type=bool, default=False)
-    ENV_TABLE_STYLE = Env('{prefix}_TABLE_STYLE', type=str, default='base')
+    env_max_col_width = Env('{prefix}_MAX_COLUMN_WIDTH', type=int, default=32)
+    env_line_numbers = Env('{prefix}_LINE_NUMBERS', type=bool, default=False)
+    env_row_numbers = Env('{prefix}_ROW_NUMBERS', type=bool, default=False)
+    env_table_style = Env('{prefix}_TABLE_STYLE', type=str, default='base')
 
     env_help = 'Environment Variables:\n'
-    env_key_max_len = max([len(i.key) for i in Env._instances.values()])
+    env_key_max_len = max([len(i.key) for i in Env.instances.values()])
     env_key_tmpl = '  {:<' + str(env_key_max_len) + '}\t{}\n'
-    for i in Env._instances.values():
+    for i in Env.instances.values():
         env_help += env_key_tmpl.format(i.key, 'default: {}'.format(i.default))
     env_help = env_help[:-1]
 
@@ -103,18 +104,19 @@ def init_parser():
     display_group = parser.add_argument_group('Display options')
     display_group.add_argument(
         '-w', '--max-column-width', dest='max_column_width', type=int,
-        default=ENV_MAX_COL_WIDTH.get(),
+        default=env_max_col_width.get(),
         help='Truncate all columns to at most this width. The remainder will be replaced with ellipsis.')
     display_group.add_argument(
         '-N', '--line-numbers', dest='line_numbers', action='store_true',
-        default=ENV_LINE_NUMBERS.get(),
+        default=env_line_numbers.get(),
         help='Show line numbers in the pager')
     display_group.add_argument(
         '-n', '--row-numbers', dest='row_numbers', action='store_true',
+        default=env_row_numbers.get(),
         help='Show row numbers')
     display_group.add_argument(
         '-s', '--table-style', dest='table_style', type=str, choices=list(Box.table_styles.keys()),
-        default=ENV_TABLE_STYLE.get(),
+        default=env_table_style.get(),
         help='Display style for the table, default is `base`')
     display_group.add_argument(
         '--cat', dest='cat', action='store_true',

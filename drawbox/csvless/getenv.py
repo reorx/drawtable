@@ -28,7 +28,7 @@ class Env(object):
     >>> operator = ENV_OPERATOR.get()
     """
     prefix = None
-    _instances = {}
+    instances = {}
     supported_types = (str, int, float, bool, )
     bool_true_values = ['1', 'true', 'True']
     bool_false_values = ['0', 'false', 'False']
@@ -54,7 +54,7 @@ class Env(object):
                 'default {} ({}) should be the same type of {}'.format(
                     default, type(default), self.type))
 
-        Env._instances[self.key] = self
+        Env.instances[self.key] = self
 
     def get(self):
         v = os.environ.get(self.key, None)

@@ -104,3 +104,48 @@ class MarkdownStyle(BaseStyle):
         lines.append(self.draw_line(cells))
 
         return lines
+
+
+class RstGridStyle(BaseStyle):
+    char_line_left = '|'
+    char_line_middle = '|'
+    char_line_right = '|'
+    has_sep = True
+    has_footer = True
+
+    def prepare_sep(self, cells_width):
+        """
+        +------------+------------+-----------+
+        """
+        cells = []
+        for cell_width in cells_width:
+            cells.append(cell_width * '-')
+        self.sep_str = '+' + '+'.join(cells) + '+'
+
+    def draw_header_lines(self, sub_row_cells_gen, cells_width):
+        """
+        +------------+------------+-----------+
+        | Header 1   | Header 2   | Header 3  |
+        +============+============+===========+
+        """
+        lines = []
+
+        cells = []
+        for cell_width in cells_width:
+            cells.append(cell_width * '-')
+        lines.append('+' + '+'.join(cells) + '+')
+
+        for sub_row_cells in sub_row_cells_gen:
+            lines.append(self.draw_line(sub_row_cells))
+
+        cells = []
+        for cell_width in cells_width:
+            cells.append(cell_width * '-')
+        lines.append('+' + '+'.join(cells) + '+')
+        return lines
+
+    def draw_footer(self, cells_width):
+        """
+        +------------+------------+-----------+
+        """
+        return self.sep_str
