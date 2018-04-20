@@ -66,11 +66,13 @@ class Box(object):
         for row in data:
             count += 1
             if has_header and count == 1:
+                # skip append to rows
                 header = row
                 continue
 
             rowslen += 1
             rows.append(row)
+
             #if not isinstance(row, list):
             #    raise TypeError('row in data must be list, get: {:r}'.format(row))
             for index, i in enumerate(row):
@@ -198,6 +200,12 @@ class Box(object):
         cols_num = len(cols)
         if not has_header:
             header = self.get_auto_header_values(cols_num, cols_width)
+
+        # change cols_width according to header
+        for k, v in cols_width.items():
+            h_len = len(header[k])
+            if h_len > v:
+                cols_width[k] = h_len
 
         cells_width = [self.cell_width(cols_width[i]) for i in range(cols_num)]
         ts = self.table_style
