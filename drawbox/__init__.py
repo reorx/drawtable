@@ -228,13 +228,13 @@ class Box(object):
             )
         )
 
-        row_last_index = rowslen - 1
-        for row_index, row in enumerate(rows):
-            row_num = row_index + 1
+        row_num = 0
+        for row in rows:
+            row_num += 1
             sub_row_cells_gen = self.sub_row_cells_generator(row, cols_num, cols_width)
 
             append_and_write(self.draw_row(sub_row_cells_gen, row_num))
-            if ts.has_sep and row_index != row_last_index:
+            if ts.has_sep and row_num != rowslen:
                 append_and_write(self.format_line(ts.sep_str))
 
         if ts.has_footer:
