@@ -1,6 +1,6 @@
 import os
 import sys
-from drawbox.csvless.__main__ import main
+from drawbox.csvless.__main__ import _main
 
 
 if __name__ == '__main__':
@@ -16,7 +16,7 @@ if __name__ == '__main__':
         null.write(s)
 
     print('--- csvless main start ---')
-    box = main(args=raw_args, writer=writer)
+    box = _main(args=raw_args, writer=writer)
     print('--- csvless main end ---')
     print('draw_result={}'.format(box.draw_result))
     null.close()

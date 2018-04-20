@@ -14,7 +14,11 @@ from drawbox.csvless.getenv import Env
 # - [ ] wrap row
 
 
-def main(args=None, writer=None):
+def main():
+    _main()
+
+
+def _main(args=None, writer=None):
     """
     Render a CSV file in the console as a human readable table
     """
