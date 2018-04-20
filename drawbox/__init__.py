@@ -128,12 +128,11 @@ class Box(object):
         sub_row_count = 0
         for sub_row_cells in sub_row_cells_gen:
             line = self.table_style.draw_line(sub_row_cells)
-            if self.row_numbers:
-                if sub_row_count == 0:
-                    sub_lines.append(self.format_line_with_number(line, row_num))
-                else:
-                    sub_lines.append(self.format_line(line))
-                sub_row_count += 1
+            if self.row_numbers and sub_row_count == 0:
+                sub_lines.append(self.format_line_with_number(line, row_num))
+            else:
+                sub_lines.append(self.format_line(line))
+            sub_row_count += 1
 
         for _i in range(self.margin_y):
             sub_lines.append(self.format_line(self.table_style.margin_y_str))
