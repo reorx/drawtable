@@ -2,6 +2,7 @@
 
 import io
 import csv
+import sys
 import argparse
 import subprocess
 from drawbox import Box, PY2
@@ -9,17 +10,22 @@ from drawbox.csvless.getenv import Env
 
 # TODO
 # - [x] auto header
-# - [ ] generated row number
+# - [x] generated row number
 # - [ ] wrap row
 
 
-def main():
+def main(args=None, writer=None):
     """
     Render a CSV file in the console as a human readable table
     """
     parser = init_parser()
 
-    args, reader_kwgs = parse_args(parser)
+    if args is None:
+        raw_args = sys.argv[1:]
+    else:
+        raw_args = args
+
+    args, reader_kwgs = parse_args(parser, raw_args)
 
     f = open_file(args.file, encoding=args.encoding)
     reader = csv.reader(f, **reader_kwgs)
@@ -32,7 +38,7 @@ def main():
     )
 
     if args.cat:
-        box.draw(reader)
+        box.draw(reader, writer=writer)
         f.close()
     else:
         less_cmd = ['less', '-S']
@@ -60,6 +66,8 @@ def main():
 
         f.close()
         p.communicate()
+
+    return box
 
 
 def init_parser():
@@ -144,8 +152,8 @@ def init_parser():
     return parser
 
 
-def parse_args(parser):
-    args = parser.parse_args()
+def parse_args(parser, raw_args):
+    args = parser.parse_args(raw_args)
 
     # reader args
     reader_kwgs = get_reader_kwargs(args)

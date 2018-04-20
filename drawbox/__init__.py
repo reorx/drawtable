@@ -71,8 +71,8 @@ class Box(object):
 
             rowslen += 1
             rows.append(row)
-            if not isinstance(row, list):
-                raise TypeError('row in data must be list, get: {:r}'.format(row))
+            #if not isinstance(row, list):
+            #    raise TypeError('row in data must be list, get: {:r}'.format(row))
             for index, i in enumerate(row):
                 if not isinstance(i, str):
                     raise TypeError('item in row must be str, get: {:r}'.format(i))
@@ -105,8 +105,9 @@ class Box(object):
             except IndexError:
                 i = ''
             sp = self._split_text(i)
-            if len(sp) > max_items:
-                max_items = len(sp)
+            sp_len = len(sp)
+            if sp_len > max_items:
+                max_items = sp_len
             cols_split[index] = sp
 
         for row_index in range(max_items):
@@ -230,6 +231,10 @@ class Box(object):
 
         if ts.has_footer:
             append_and_write(self.format_line(ts.draw_footer(cells_width)))
+
+        self.draw_result = {
+            'row_num': row_num,
+        }
 
 
 if __name__ == '__main__':
