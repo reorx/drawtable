@@ -59,7 +59,7 @@ class Box(object):
         if not isinstance(data, collections.Iterable):
             raise TypeError('data must be iterable, get: {:r}'.format(data))
         cols_width = {}
-        header = None
+        header = []
         rows = []
         rowslen = 0
         count = 0
@@ -198,15 +198,16 @@ class Box(object):
         if self.auto_header:
             has_header = False
         header, rows, rowslen, cols_width = self.preprocess_data(data, has_header)
-        cols_num = len(cols_width)
         if not has_header:
-            header = self.get_auto_header_values(cols_num, cols_width)
+            header = self.get_auto_header_values(len(cols_width), cols_width)
 
         # change cols_width according to header
-        for k, v in cols_width.items():
-            h_len = len(header[k])
-            if h_len > v:
+        for k, h in enumerate(header):
+            h_len = len(h)
+            col_width = cols_width.setdefault(k, h_len)
+            if h_len > col_width:
                 cols_width[k] = h_len
+        cols_num = len(cols_width)
 
         cells_width = [self.cell_width(cols_width[i]) for i in range(cols_num)]
         ts = self.table_style
