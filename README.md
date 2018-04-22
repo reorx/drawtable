@@ -1,10 +1,40 @@
-# Drawbox
+# Drawtable (csvless)
 
-Draw ASCII art box with text.
+Drawtable is a python library for drawing ASCII table with text data.
+It also contains a command line tool called `csvless`
+that helps you view csv files without hassle.
+
+## Installation
+
+```
+pip install drawtable
+```
 
 ## Usage
 
-Draw table box to show data:
+### CLI tool
+
+For details please see `csvless -h`, here are some typical examples:
+
+```
+$ csvless samples/foo.csv
+
+$ csvless -s markdown samples/foo.csv
+
+$ csvless -s markdown --cat samples/foo.csv
+
+$ csvless -s box -N samples/foo.csv
+
+$ csvless -s box -N -n samples/foo.csv
+
+$ csvless -H samples/foo.csv
+
+$ csvless -w 10 --no-wrap samples/foo.csv
+```
+
+### Library
+
+Draw table box for list data:
 
 ```python
 >>> from drawbox import Table
