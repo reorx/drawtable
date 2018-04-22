@@ -156,8 +156,8 @@ class Table(object):
         sp = []
         for i in text.split('\n'):
             if text:
-                for j in range(0, len(text), self.max_col_width):
-                    sp.append(text[j:j + self.max_col_width])
+                for j in range(0, len(i), self.max_col_width):
+                    sp.append(i[j:j + self.max_col_width])
             else:
                 sp.append(i)
         return sp
