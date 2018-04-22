@@ -5,7 +5,7 @@ import csv
 import sys
 import argparse
 import subprocess
-from drawtable import Box, PY2
+from drawtable import Table, PY2
 from drawtable.csvless.getenv import Env
 
 # TODO
@@ -35,7 +35,7 @@ def _main(args=None, writer=None):
     f = open_file(args.file, encoding=args.encoding)
     reader = csv.reader(f, **reader_kwgs)
 
-    box = Box(
+    tb = Table(
         max_col_width=args.max_column_width,
         table_style=args.table_style,
         auto_header=args.auto_header,
@@ -44,7 +44,7 @@ def _main(args=None, writer=None):
     )
 
     if args.cat:
-        box.draw(reader, writer=writer)
+        tb.draw(reader, writer=writer)
         f.close()
     else:
         less_cmd = ['less', '-S']
@@ -64,7 +64,7 @@ def _main(args=None, writer=None):
                 counts['w'] += 1
 
         try:
-            box.draw(reader, writer=writer)
+            tb.draw(reader, writer=writer)
         except BrokenPipeError as e:
             if counts['w'] == 0:
                 print('Zero success write before BrokenPipeError')
@@ -73,7 +73,7 @@ def _main(args=None, writer=None):
         f.close()
         p.communicate()
 
-    return box
+    return tb
 
 
 def init_parser():
@@ -118,7 +118,7 @@ def init_parser():
         default=env_row_numbers.get(),
         help='Show row numbers')
     display_group.add_argument(
-        '-s', '--table-style', dest='table_style', type=str, choices=list(Box.table_styles.keys()),
+        '-s', '--table-style', dest='table_style', type=str, choices=list(Table.table_styles.keys()),
         default=env_table_style.get(),
         help='Display style for the table, default is `base`')
     display_group.add_argument(

@@ -18,7 +18,7 @@ auto_header_letters_num = len(auto_header_letters)
 
 
 # noinspection PyStringFormat
-class Box(object):
+class Table(object):
     align_marks = {
         'left': '<',
         'right': '>',
@@ -337,7 +337,7 @@ if __name__ == '__main__':
         return d
 
     # complex box
-    box = Box(margin_x=2, margin_y=0, max_col_width=15, align='right')
+    box = Table(margin_x=2, margin_y=0, max_col_width=15, align='right')
     box.draw(random_data())
     box.draw([
         ['', ''],
@@ -354,4 +354,4 @@ sit voluptatem accusantium doloremque laudantium,
 
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
 Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."""
-    Box(margin_x=1, margin_y=0, max_col_width=40).draw([[lorem]])
+    Table(margin_x=1, margin_y=0, max_col_width=40).draw([[lorem]])

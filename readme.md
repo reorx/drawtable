@@ -7,14 +7,14 @@ Draw ASCII art box with text.
 Draw table box to show data:
 
 ```python
->>> from drawbox import Box
->>> box = Box(
+>>> from drawbox import Table
+>>> tb = Table(
 ...     margin_x=1,
 ...     margin_y=0,
 ...     align='left',
 ...     col_max_width=40,
 ... )
->>> box.draw([
+>>> tb.draw([
 ...     ['project', 'url'],
 ...     ['drawbox', 'https://github.com/reorx/drawbox'],
 >>> ])
@@ -28,14 +28,14 @@ Draw table box to show data:
 Draw a simple one cell box:
 
 ```python
->>> from drawbox import Box
->>> box = Box(
+>>> from drawbox import Table
+>>> tb = Table(
 ...     margin_x=1,
 ...     margin_y=0,
 ...     align='center',
 ...     col_max_width=40,
 ... )
->>> box.draw([[
+>>> tb.draw([[
 ...     """Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."""
 ... ]])
 ┌──────────────────────────────────────────┐
