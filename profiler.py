@@ -1,6 +1,6 @@
 import os
 import sys
-from drawbox.csvless.__main__ import _main
+from drawtable.csvless.__main__ import _main
 
 
 if __name__ == '__main__':

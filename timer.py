@@ -4,7 +4,7 @@ import timeit
 setup = '''
 import os
 import sys
-from drawbox.csvless.__main__ import _main
+from drawtable.csvless.__main__ import _main
 
 
 def main():
