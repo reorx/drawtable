@@ -7,6 +7,9 @@ import string
 from drawtable.styles import BaseStyle, BoxStyle, MarkdownStyle, RstGridStyle
 
 
+__version__ = '0.1.0'
+
+
 PY2 = sys.version_info.major == 2
 
 if PY2:
