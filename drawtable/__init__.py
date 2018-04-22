@@ -268,7 +268,8 @@ class Table(object):
             self.format_lines(
                 ts.draw_header_lines(
                     self.sub_row_generator(header, cols_num, cols_width),
-                    cells_width)
+                    cells_width,
+                    no_rows=rowslen == 0)
             )
         )
 

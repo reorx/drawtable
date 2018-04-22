@@ -24,7 +24,7 @@ class BaseStyle(object):
         charlen = sum(cells_width) + len(cells_width) - 1
         self.sep_str = self.char_line_left + charlen * ' ' + self.char_line_right
 
-    def draw_header_lines(self, sub_row_cells_gen, cells_width):
+    def draw_header_lines(self, sub_row_cells_gen, cells_width, no_rows=False):
         lines = []
         for sub_row_cells in sub_row_cells_gen:
             lines.append(self.char_line_left + self.char_line_middle.join(sub_row_cells) + self.char_line_right)
@@ -55,7 +55,7 @@ class BoxStyle(BaseStyle):
             cells.append(cell_width * '─')
         self.sep_str = '├' + '┼'.join(cells) + '┤'
 
-    def draw_header_lines(self, sub_row_cells_gen, cells_width):
+    def draw_header_lines(self, sub_row, cells_width, no_rows=False):
         """
         ┌─────┬─────┬─────┐
         ├─────┼─────┼─────┤
@@ -67,10 +67,11 @@ class BoxStyle(BaseStyle):
             cells.append(cell_width * '─')
         lines.append('┌' + '┬'.join(cells) + '┐')
 
-        for sub_row_cells in sub_row_cells_gen:
-            lines.append(self.draw_line(sub_row_cells))
+        for cells_gen in sub_row:
+            lines.append(self.draw_line(cells_gen))
 
-        lines.append(self.sep_str)
+        if not no_rows:
+            lines.append(self.sep_str)
         return lines
 
     def draw_footer(self, cells_width):
@@ -88,7 +89,7 @@ class MarkdownStyle(BaseStyle):
     char_line_middle = '|'
     char_line_right = '|'
 
-    def draw_header_lines(self, sub_row_cells_gen, cells_width):
+    def draw_header_lines(self, sub_row_cells_gen, cells_width, no_rows=False):
         """
         | xxx | ooo |
         | --- | --- |
@@ -122,7 +123,7 @@ class RstGridStyle(BaseStyle):
             cells.append(cell_width * '-')
         self.sep_str = '+' + '+'.join(cells) + '+'
 
-    def draw_header_lines(self, sub_row_cells_gen, cells_width):
+    def draw_header_lines(self, sub_row_cells_gen, cells_width, no_rows=False):
         """
         +------------+------------+-----------+
         | Header 1   | Header 2   | Header 3  |
