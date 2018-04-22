@@ -5,8 +5,8 @@ import csv
 import sys
 import argparse
 import subprocess
-from drawbox import Box, PY2
-from drawbox.csvless.getenv import Env
+from drawtable import Box, PY2
+from drawtable.csvless.getenv import Env
 
 # TODO
 # - [x] auto header

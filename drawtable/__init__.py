@@ -4,7 +4,7 @@ from __future__ import print_function
 import sys
 import collections
 import string
-from drawbox.styles import BaseStyle, BoxStyle, MarkdownStyle, RstGridStyle
+from drawtable.styles import BaseStyle, BoxStyle, MarkdownStyle, RstGridStyle
 
 
 PY2 = sys.version_info.major == 2

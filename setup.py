@@ -4,7 +4,7 @@
 from setuptools import setup
 
 
-package_name = 'drawbox'
+package_name = 'drawtable'
 
 
 def get_version():
@@ -51,7 +51,7 @@ setup(
     url='',
     long_description=get_long_description(),
     packages=[
-        'drawbox',
+        'drawtable',
     ],
     # Or use (make sure find_packages is imported from setuptools):
     #packages=find_packages(),
@@ -63,7 +63,7 @@ setup(
     #package_data={},
     entry_points={
         'console_scripts': [
-            'csvless = drawbox.csvless.__main__:main'
+            'csvless = drawtable.csvless.__main__:main'
         ]
     }
 )
