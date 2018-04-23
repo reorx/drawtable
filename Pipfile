@@ -8,6 +8,8 @@ name = "pypi"
 [dev-packages]
 "gprof2dot" = "*"
 vprof = "*"
+pytest = "*"
+tox = "*"
 
 [requires]
 python_version = "3.6"
