@@ -1,5 +1,9 @@
 .idea/
 __pycache__/
+.pytest_cache/
+.tox/
+build/
+dist/
 *.pyc
 *profile.svg
 *.pstats
