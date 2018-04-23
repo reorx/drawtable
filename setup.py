@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 package_name = 'drawtable'
@@ -50,9 +50,7 @@ setup(
     description='',
     url='',
     long_description=get_long_description(),
-    packages=[
-        'drawtable',
-    ],
+    packages=find_packages(),
     # Or use (make sure find_packages is imported from setuptools):
     #packages=find_packages(),
     # Or if it's a single file package
