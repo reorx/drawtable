@@ -1,9 +1,13 @@
 .idea/
+*.pyc
 __pycache__/
-.pytest_cache/
-.tox/
+
 build/
 dist/
-*.pyc
+
+.pytest_cache/
+.tox/
+.coverage
+
 *profile.svg
 *.pstats

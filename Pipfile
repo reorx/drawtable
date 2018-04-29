@@ -9,6 +9,7 @@ name = "pypi"
 "gprof2dot" = "*"
 vprof = "*"
 pytest = "*"
+pytest-cov = "*"
 tox = "*"
 
 [requires]
