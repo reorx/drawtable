@@ -35,7 +35,7 @@ class Table(object):
         'rst-grid': RstGridStyle,
     }
 
-    # from `less`:
+    # Reference of line number format in `less`:
     # |_____XX_CONTENT|
     # explain:
     # `|` is the border of terminal window, `_` is space, `XX` is line number,
@@ -323,39 +323,3 @@ def truncate_str(s, max_length):
     if len(s) > max_length:
         return s[:max_length - 1] + ellipsis_str
     return s
-
-
-if __name__ == '__main__':
-    import random
-    import string
-
-    def random_str(length):
-        return ''.join(random.choice(string.ascii_letters) for i in range(length))
-
-    def random_data():
-        d = []
-        for i in range(random.randint(1, 5)):
-            d.append(
-                [random_str(random.randint(0, 20)) for j in range(random.randint(1, 5))]
-            )
-        return d
-
-    # complex box
-    box = Table(margin_x=2, margin_y=0, max_col_width=15, align='right')
-    box.draw(random_data())
-    box.draw([
-        ['', ''],
-        [''],
-    ])
-
-    # one cell box
-    lorem = """Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-
-Sed ut perspiciatis,
-unde omnis iste natus error
-sit voluptatem accusantium doloremque laudantium,
-
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."""
-    Table(margin_x=1, margin_y=0, max_col_width=40).draw([[lorem]])
