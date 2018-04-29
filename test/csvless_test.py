@@ -53,6 +53,8 @@ testdata = [
     ('generic', ['-s', 'box', '-n']),
     ('generic', ['-s', 'markdown']),
     ('generic', ['-s', 'markdown', '-n']),
+    ('generic', ['-s', 'rst-grid']),
+    ('generic', ['-s', 'rst-grid', '-n']),
 ]
 
 

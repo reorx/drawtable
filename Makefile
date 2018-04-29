@@ -5,7 +5,7 @@ clean:
 	rm -rf *profile.svg *.pstats
 
 test:
-	PYTHONPATH=. nosetests -w test/ -v
+	pytest -vv
 
 publish:
 	python setup.py sdist bdist_wheel upload
