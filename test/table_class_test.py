@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import io
 import random
 import string
 import pytest
 from drawtable import Table
+from six import PY2
+
+if PY2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
 
 
 def random_str(length):
@@ -21,7 +26,7 @@ def random_data():
 
 @pytest.fixture
 def writer():
-    return io.StringIO()
+    return StringIO()
 
 
 def test_random_data(writer):
