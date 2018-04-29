@@ -1,5 +1,8 @@
 # Drawtable (csvless)
 
+[![Build Status](https://travis-ci.org/reorx/drawtable.svg?branch=master)](https://travis-ci.org/reorx/drawtable)
+[![Coverage Status](https://coveralls.io/repos/github/reorx/drawtable/badge.svg?branch=master)](https://coveralls.io/github/reorx/drawtable?branch=master)
+
 Drawtable is a python library for drawing ASCII table with text data.
 It also contains a command line tool called `csvless`
 that helps you view csv files without hassle.

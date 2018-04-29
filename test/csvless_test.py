@@ -26,12 +26,15 @@ def datadir():
     return datadir()
 
 
-def do_csvless(filepath, extra_args=None):
+def do_csvless(filepath, extra_args=None, with_coverage=True):
     """
     :return: stdout
     :rtype: string for both python 2 and 3
     """
-    args = ['csvless', '-w', '12']
+    # NOTE cwd must be root of the project to run this test
+    args = ['drawtable/csvless/__main__.py', '-w', '12']
+    if with_coverage:
+        args = ['coverage', 'run', '-a'] + args
     if extra_args is not None:
         args.extend(extra_args)
     args.append(filepath)
