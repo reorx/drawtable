@@ -9,10 +9,7 @@ class BaseStyle(object):
     has_sep = False
     has_footer = False
 
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(k, v)
-
+    def __init__(self):
         self.margin_y_str = None
         self.sep_str = None
 
@@ -34,8 +31,7 @@ class BaseStyle(object):
         return self.char_line_left + self.char_line_middle.join(cells_gen) + self.char_line_right
 
     def draw_footer(self, cells_width):
-        charlen = sum(cells_width) + len(cells_width) - 1
-        return self.char_line_left + charlen * ' ' + self.char_line_right
+        pass
 
 
 class BoxStyle(BaseStyle):
