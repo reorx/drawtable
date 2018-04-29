@@ -1,5 +1,4 @@
-# coding: utf-8
-
+# -*- coding: utf-8 -*-
 
 class BaseStyle(object):
     char_line_left = ''

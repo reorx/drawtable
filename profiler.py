@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import sys
 from drawtable.csvless.__main__ import _main
