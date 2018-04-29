@@ -1,0 +1,7 @@
+ foo  long head 12     bar   
+      345                    
+ 1    f                b a r 
+      o                      
+      o                      
+      a very very   2        
+      long cell              
