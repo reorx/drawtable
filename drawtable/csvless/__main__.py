@@ -102,7 +102,7 @@ def init_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     # arguments
-    parser.add_argument('file', metavar="FILE", type=str, help="csv file")
+    parser.add_argument('file', metavar="FILE", type=str, help="csv file, use /dev/stdin for receiving data from pipe")
 
     # display options
     display_group = parser.add_argument_group('Display options')
