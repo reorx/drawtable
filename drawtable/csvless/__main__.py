@@ -6,6 +6,11 @@ import csv
 import sys
 import argparse
 import subprocess
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 from drawtable import Table, PY2
 from drawtable.csvless.getenv import Env
 
@@ -18,6 +23,11 @@ from drawtable.csvless.getenv import Env
 
 def main():
     _main()
+
+
+def stdin_as_file():
+    text = sys.stdin.read()
+    return StringIO(text)
 
 
 def _main(args=None, writer=None):
@@ -33,7 +43,10 @@ def _main(args=None, writer=None):
 
     args, reader_kwgs = parse_args(parser, raw_args)
 
-    f = open_file(args.file, encoding=args.encoding)
+    if args.file == '-':
+        f = stdin_as_file()
+    else:
+        f = open_file(args.file, encoding=args.encoding)
     reader = csv.reader(f, **reader_kwgs)
 
     tb = Table(
