@@ -40,33 +40,33 @@ $ csvless -w 10 --no-wrap samples/foo.csv
 Draw table box for list data:
 
 ```python
->>> from drawbox import Table
+>>> from drawtable import Table
 >>> tb = Table(
 ...     margin_x=1,
 ...     margin_y=0,
 ...     align='left',
-...     col_max_width=40,
+...     max_col_width=40,
 ... )
 >>> tb.draw([
 ...     ['project', 'url'],
-...     ['drawbox', 'https://github.com/reorx/drawbox'],
+...     ['drawtable', 'https://github.com/reorx/drawtable'],
 >>> ])
-┌─────────┬──────────────────────────────────┐
-│ project │ url                              │
-├─────────┼──────────────────────────────────┤
-│ drawbox │ https://github.com/reorx/drawbox │
-└─────────┴──────────────────────────────────┘
+┌───────────┬────────────────────────────────────┐
+│ project   │ url                                │
+├───────────┼────────────────────────────────────┤
+│ drawtable │ https://github.com/reorx/drawtable │
+└───────────┴────────────────────────────────────┘
 ```
 
 Draw a simple one cell box:
 
 ```python
->>> from drawbox import Table
+>>> from drawtable import Table
 >>> tb = Table(
 ...     margin_x=1,
 ...     margin_y=0,
 ...     align='center',
-...     col_max_width=40,
+...     max_col_width=40,
 ... )
 >>> tb.draw([[
 ...     """Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."""
