@@ -20,19 +20,32 @@ auto_header_letters = string.ascii_uppercase
 auto_header_letters_num = len(auto_header_letters)
 
 
+class Align:
+    left = 'left'
+    right = 'right'
+    center = 'center'
+
+
+class Style:
+    base = 'base'
+    box = 'box'
+    markdown = 'markdown'
+    rst_grid = 'rst-grid'
+
+
 # noinspection PyStringFormat
 class Table(object):
     align_marks = {
-        'left': '<',
-        'right': '>',
-        'center': '^',
+        Align.left: '<',
+        Align.right: '>',
+        Align.center: '^',
     }
 
     table_styles = {
-        'base': BaseStyle,
-        'box': BoxStyle,
-        'markdown': MarkdownStyle,
-        'rst-grid': RstGridStyle,
+        Style.base: BaseStyle,
+        Style.box: BoxStyle,
+        Style.markdown: MarkdownStyle,
+        Style.rst_grid: RstGridStyle,
     }
 
     # Reference of line number format in `less`:
@@ -42,8 +55,8 @@ class Table(object):
     # `CONTENT` is the actual value of the line
     row_number_width = 7
 
-    def __init__(self, margin_x=1, margin_y=0, align='left',
-                 max_col_width=16, table_style='box',
+    def __init__(self, margin_x=1, margin_y=0, align=Align.left,
+                 max_col_width=16, table_style=Style.box,
                  auto_header=False, row_numbers=False, wrap_row=True):
         self.margin_x = margin_x
         self.margin_x_str = ' ' * margin_x
