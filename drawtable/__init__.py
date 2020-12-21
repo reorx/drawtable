@@ -4,6 +4,7 @@ from __future__ import print_function
 import sys
 import collections
 import string
+from wcwidth import wcswidth
 from drawtable.styles import BaseStyle, BoxStyle, MarkdownStyle, RstGridStyle
 
 
@@ -18,6 +19,10 @@ if PY2:
 
 auto_header_letters = string.ascii_uppercase
 auto_header_letters_num = len(auto_header_letters)
+
+
+def wc_ljust(text, length):
+    return text + (' ' * max(0, (length - wcswidth(text))))
 
 
 class Align:
@@ -150,8 +155,7 @@ class Table(object):
                 v = sp[sub_row_index]
             except IndexError:
                 v = ''
-            tmpl = '{:' + self.align_mark + str(cols_width[col_index]) + '}'
-            cell = self.margin_x_str + tmpl.format(v) + self.margin_x_str
+            cell = self.margin_x_str + wc_ljust(v, cols_width[col_index]) + self.margin_x_str
             yield cell
 
     def cell_generator(self, values, cols_num, cols_width):
@@ -164,8 +168,7 @@ class Table(object):
             else:
                 # truncate if too long
                 i = truncate_str(i, col_width)
-            tmpl = '{:' + self.align_mark + str(col_width) + '}'
-            cell = self.margin_x_str + tmpl.format(i) + self.margin_x_str
+            cell = self.margin_x_str + wc_ljust(i, col_width) + self.margin_x_str
             yield cell
 
     def _split_text(self, text):
