@@ -1,0 +1,10 @@
+language,text,comment
+en,simple English words,nothing special
+cn,我是中文,Chinese
+en and cn,English and 中文,
+en/cn/number,中文 English and 123,.
+en/cn/number,"深深的海洋，
+
+你为何不平静？
+
+不平静就像我爱人，",multi-line paragraphs

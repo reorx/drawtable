@@ -68,7 +68,7 @@ def _main(args=None, writer=None):
             tb.draw(reader, writer=writer)
         except BrokenPipeError as e:
             if counts['w'] == 0:
-                print('Zero success write before BrokenPipeError')
+                print('Zero line write before BrokenPipeError')
                 raise e
 
         f.close()

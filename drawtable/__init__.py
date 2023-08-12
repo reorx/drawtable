@@ -103,7 +103,7 @@ class Table(object):
             for index, i in enumerate(row):
                 # if not isinstance(i, str):
                 #    raise TypeError('item in row must be str, get: {:r}'.format(i))
-                i_len = len(i)
+                i_len = wcswidth(i)
                 col_len = cols_width.setdefault(index, i_len)
                 if i_len > col_len:
                     cols_width[index] = i_len
@@ -155,6 +155,9 @@ class Table(object):
                 v = sp[sub_row_index]
             except IndexError:
                 v = ''
+            else:
+                # truncate if too long
+                v = truncate_str(v, cols_width[col_index])
             cell = self.margin_x_str + wc_ljust(v, cols_width[col_index]) + self.margin_x_str
             yield cell
 
@@ -172,6 +175,9 @@ class Table(object):
             yield cell
 
     def _split_text(self, text):
+        if self.max_col_width == -1:
+            return [text]
+
         sp = []
         for i in text.split('\n'):
             if text:
@@ -267,7 +273,10 @@ class Table(object):
         # 3. max_col_width
         for k, h in enumerate(header):
             h_len = len(h)
-            cols_width[k] = min([max([cols_width.get(k, 0), h_len]), self.max_col_width])
+            w = max([cols_width.get(k, 0), h_len])
+            if self.max_col_width != -1:
+                w = min([w, self.max_col_width])
+            cols_width[k] = w
         cols_num = len(cols_width)
 
         cells_width = [self.cell_width(cols_width[i]) for i in range(cols_num)]
@@ -336,6 +345,22 @@ ellipsis_str = '…'
 
 
 def truncate_str(s, max_length):
-    if len(s) > max_length:
-        return s[:max_length - 1] + ellipsis_str
+    len_s = len(s)
+    wc_s = wcswidth(s)
+    print('truncate_str', s, max_length, len_s, wc_s)
+    if len_s == wc_s:
+        if len_s > max_length:
+            return s[:max_length - 1] + ellipsis_str
+    else:
+        # wc truncate
+        if wc_s > max_length:
+            for i in range(len_s):
+                tr = s[:len_s - i - 1]
+                print('tr', tr)
+                if wcswidth(tr) <= max_length:
+                    return tr
     return s
+
+
+def wc_truncate(s, max_length):
+    len_s = len(s)
